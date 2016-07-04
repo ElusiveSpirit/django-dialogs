@@ -7,6 +7,76 @@ from django.utils import dateformat
 
 from dialogs.models import Message
 
+
+class HttpResponseAjax(HttpResponse):
+    def __init__(self, status='ok', **kwargs):
+        kwargs['status'] = status
+        super(HttpResponseAjax, self).__init__(
+            content = json.dumps(kwargs),
+            content_type = 'application/json',
+        )
+
+
+class HttpResponseAjaxError(HttpResponseAjax):
+    def __init__(self, code, message):
+        super(HttpResponseAjaxError, self).__init__(
+            status = 'error', code = code, message = message
+        )
+
+
+def login_required_ajax(view):
+    def view2(request, *args, **kwargs):
+        if request.user.is_authenticated():
+            return view(request, *args, **kwargs)
+        elif request.is_ajax():
+            return HttpResponseAjaxError(
+                code = "no_auth",
+                message = u'Требуется авторизация',
+            )
+        else:
+            redirect('/login/?continue=' + request.get_full_path())
+    return view2
+
+
+def get_messages_info(user_id, thread_id):
+    """
+    Returns a dict:
+    {
+        "total",
+        "sent",
+        "received"
+    }
+    """
+    user_id = str(user_id)
+    thread_id = str(thread_id)
+    ret = {}
+
+    r = redis.StrictRedis()
+
+    ret['total'] = r.hget(
+        "thread_{}_messages".format(thread_id),
+        "total_messages"
+    )
+
+    ret['sent'] = r.hget(
+        "thread_{}_messages".format(thread_id),
+        "from_{}".format(user_id)
+    )
+
+    if ret['total']:
+        ret['total'] = int(ret['total'])
+    else:
+        ret['total'] = 0
+
+    if ret['sent']:
+        ret['sent'] = int(ret['sent'])
+    else:
+        ret['sent'] = 0
+
+    ret['received'] = ret['total'] - ret['sent']
+    return ret
+
+
 def json_response(obj):
     """
     This function takes a Python object (a dictionary or a list)
@@ -35,6 +105,9 @@ def send_message(thread_id,
     (otherwise it is assumed that the message was
     already published in the channel).
     """
+
+    print("thread_id")
+    print(thread_id)
 
     message = Message()
     message.text = message_text

@@ -71,26 +71,19 @@ class MessagesHandler(websocket.WebSocketHandler):
         }))
         http_client = tornado.httpclient.AsyncHTTPClient()
         request = tornado.httpclient.HTTPRequest(
-            "".join([
-                        settings.SEND_MESSAGE_API_URL,
-                        "/",
-                        self.thread_id,
-                        "/"
-                    ]),
+            settings.SEND_MESSAGE_API_URL,
             method="POST",
             body=urlencode({
-                "message": message.encode("utf-8"),
+                "message_text": message.encode("utf-8"),
                 "api_key": settings.API_KEY,
                 "sender_id": self.user_id,
+                "thread_id" : self.thread_id,
             })
         )
         http_client.fetch(request, self.handle_request)
 
     def show_new_message(self, result):
-        self.write_message(json.encode({
-            'author' : str(result.author),
-            'text' : str(result.body),
-        }))
+        self.write_message(str(result.body))
 
     def on_close(self):
         print('On close')

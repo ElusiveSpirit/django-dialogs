@@ -12,10 +12,30 @@
     {% endfor %}
     </div>
     <h1>Отправить сообщение</h1>
-    <form action="{% url 'dialogs:send-message' %}" method="post" class="new_message">
+    <form action="{% url 'dialogs:messages' %}" method="post" class="new_message">
         {% csrf_token %}
-        <p class="name"><input name="recipient_name" placeholder="Имя получателя"></p>
-        <p><textarea name="message" placeholder="Сообщение"></textarea></p>
+        {% for hidden in form.hidden_fields %}
+          {{ hidden }}
+        {% endfor %}
+
+        {% for e in form.non_field_errors %}
+          <label>{{ e }}</label>
+        {% endfor %}
+        {% for field in form.visible_fields %}
+          <p class="{% if field.errors %}has-error{% endif %}">
+            {% if field.errors %}
+              <p>
+                {% for error in field.errors %}
+                    <label for="{{ field.id_for_label }}">{{ error }}</label>
+                {% endfor %}
+              </p>
+            {% endif %}
+            {{ field }}
+            {% if field.help_text %}
+              <p class="help">{{ field.help_text|safe }}</p>
+            {% endif %}
+          </p>
+        {% endfor %}
         <p><input type="submit" value="Отправить"></p>
     </form>
 </div>

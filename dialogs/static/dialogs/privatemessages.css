@@ -10,7 +10,7 @@ body {
     background: #fff;
 }
 
-textarea, form p.name input {
+textarea, form p input {
     border: 1px #d4d4d4 solid;
 }
 
@@ -18,7 +18,7 @@ form.new_message p {
     margin: 4px 0;
 }
 
-form.new_message p.name input, form.new_message textarea {
+form.new_message p input, form.new_message textarea {
     width: 300px;
 }
 
