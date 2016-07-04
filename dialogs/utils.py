@@ -18,7 +18,8 @@ def json_response(obj):
 def send_message(thread_id,
                  sender_id,
                  message_text,
-                 sender_name=None):
+                 sender_name,
+                 pub=False):
     """
     This function takes Thread object id (first argument),
     sender id (second argument), message text (third argument)
@@ -46,16 +47,16 @@ def send_message(thread_id,
 
     r = redis.StrictRedis()
 
-    if sender_name:
-        r.publish("".join(["thread_", thread_id, "_messages"]), json.dumps({
+    if pub:
+        r.publish("thread_{}_messages".format(thread_id), json.dumps({
             "timestamp": dateformat.format(message.datetime, 'U'),
             "sender": sender_name,
             "text": message_text,
         }))
 
-    for key in ("total_messages", "".join(["from_", sender_id])):
+    for key in ("total_messages", "from_".format(sender_id)):
         r.hincrby(
-            "".join(["thread_", thread_id, "_messages"]),
+            "thread_{}_messages".format(thread_id),
             key,
             1
         )

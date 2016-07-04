@@ -8,6 +8,15 @@ class Thread(models.Model):
     participants = models.ManyToManyField(User)
     last_message = models.DateTimeField(null=True, blank=True, db_index=True)
 
+    def get_participants(self):
+        return ", ".join(self.participants)
+
+    def get_participants_exclude_author(self, user):
+        ret = []
+        participants = self.participants.exclude(id=user.id)
+        for participant in participants:
+            ret.append(participant.username)
+        return ", ".join(ret)
 
 class Message(models.Model):
     text = models.TextField()

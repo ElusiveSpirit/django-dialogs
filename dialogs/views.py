@@ -33,13 +33,10 @@ from django.contrib.auth.models import User
 from dialogs.models import Thread, Message
 from dialogs.utils import json_response, send_message
 
-
+@login_required
 def send_message_view(request):
     if not request.method == "POST":
         return HttpResponse("Please use POST.")
-
-    if not request.user.is_authenticated():
-        return HttpResponse("Please sign in.")
 
     message_text = request.POST.get("message")
 
@@ -49,34 +46,43 @@ def send_message_view(request):
     if len(message_text) > 10000:
         return HttpResponse("The message is too long.")
 
-    recipient_name = request.POST.get("recipient_name")
-
+    recipient_names = request.POST.get("recipient_name")
+    recipient_names = recipient_names.replace(" ", "")
+    recipient_names = recipient_names.split(',')
+    recipient_list = []
     try:
-        recipient = User.objects.get(username=recipient_name)
+        for name in recipient_names:
+            recipient_list.append(User.objects.get(username=name))
     except User.DoesNotExist:
         return HttpResponse("No such user.")
 
-    if recipient == request.user:
+    if request.user in recipient_list:
         return HttpResponse("You cannot send messages to yourself.")
 
     thread_queryset = Thread.objects.filter(
-        participants=recipient
-    ).filter(
         participants=request.user
     )
+
+    for recipient in recipient_list:
+        thread_queryset = thread_queryset.filter(
+            participants=recipient
+        )
 
     if thread_queryset.exists():
         thread = thread_queryset[0]
     else:
         thread = Thread.objects.create()
-        thread.participants.add(request.user, recipient)
+        recipient_list.append(request.user)
+        for recipient in recipient_list:
+            thread.participants.add(recipient)
 
     send_message(
-                    thread.id,
-                    request.user.id,
-                    message_text,
-                    request.user.username
-                )
+        thread.id,
+        request.user.id,
+        message_text,
+        request.user.username,
+        True
+    )
 
     return HttpResponseRedirect(
         reverse('dialogs:messages')
@@ -112,10 +118,11 @@ def send_message_api_view(request, thread_id):
         return json_response({"error": "The message is too long."})
 
     send_message(
-                    thread.id,
-                    sender.id,
-                    message_text
-                )
+        thread.id,
+        sender.id,
+        message_text,
+        sender.username
+    )
 
     return json_response({"status": "ok"})
 
@@ -136,7 +143,7 @@ def messages_view(request):
     user_id = str(request.user.id)
 
     for thread in threads:
-        thread.partner = thread.participants.exclude(id=request.user.id)[0]
+        thread.partners = thread.get_participants_exclude_author(request.user)
 
         thread.total_messages = r.hget(
             "".join(["thread_", str(thread.id), "_messages"]),
@@ -185,7 +192,7 @@ def chat_view(request, thread_id):
 
     messages_received = messages_total-messages_sent
 
-    partner = thread.participants.exclude(id=request.user.id)[0]
+    partners = thread.get_participants_exclude_author(request.user)
 
     tz = request.COOKIES.get("timezone")
     if tz:
@@ -199,6 +206,6 @@ def chat_view(request, thread_id):
                                   "messages_total": messages_total,
                                   "messages_sent": messages_sent,
                                   "messages_received": messages_received,
-                                  "partner": partner,
+                                  "partners": partners,
                               },
                               context_instance=RequestContext(request))

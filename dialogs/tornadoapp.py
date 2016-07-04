@@ -87,7 +87,10 @@ class MessagesHandler(websocket.WebSocketHandler):
         http_client.fetch(request, self.handle_request)
 
     def show_new_message(self, result):
-        self.write_message(str(result.body))
+        self.write_message(json.encode({
+            'author' : str(result.author),
+            'text' : str(result.body),
+        }))
 
     def on_close(self):
         print('On close')
