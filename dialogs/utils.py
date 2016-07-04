@@ -2,6 +2,7 @@ import json
 
 import redis
 
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils import dateformat
 
 from dialogs.models import Message

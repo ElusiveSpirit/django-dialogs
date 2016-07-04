@@ -56,8 +56,9 @@ function activate_chat(thread_id, user_name, number_of_messages) {
     var ws;
 
     function start_chat_ws() {
-        ws = new WebSocket("ws://127.0.0.1:8888/" + thread_id + "/");
+        ws = new WebSocket("ws://127.0.0.1:8888/ws/" + thread_id + "/");
         ws.onmessage = function(event) {
+            console.log("on mess");
             var message_data = JSON.parse(event.data);
             var date = new Date(message_data.timestamp*1000);
             var time = $.map([date.getHours(), date.getMinutes(), date.getSeconds()], function(val, i) {
@@ -72,8 +73,9 @@ function activate_chat(thread_id, user_name, number_of_messages) {
                 number_of_messages["received"]++;
             }
             $("div.chat p.messages").html('<span class="total">' + number_of_messages["total"] + '</span> ' + getNumEnding(number_of_messages["total"], ["сообщение", "сообщения", "сообщений"]) + ' (<span class="received">' + number_of_messages["received"] + '</span> получено, <span class="sent">' + number_of_messages["sent"] + '</span> отправлено)');
-        }
+        };
         ws.onclose = function(){
+            console.log("closed");
             // Try to reconnect in 5 seconds
             setTimeout(function() {start_chat_ws()}, 5000);
         };

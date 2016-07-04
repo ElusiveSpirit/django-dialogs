@@ -79,7 +79,7 @@ def send_message_view(request):
                 )
 
     return HttpResponseRedirect(
-        reverse('privatemessages.views.messages_view')
+        reverse('dialogs:messages')
     )
 
 
@@ -189,7 +189,8 @@ def chat_view(request, thread_id):
 
     tz = request.COOKIES.get("timezone")
     if tz:
-        timezone.activate(tz)
+        #timezone.activate(tz)
+        pass
 
     return render_to_response('chat.html',
                               {

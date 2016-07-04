@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+{% load staticfiles %}
 <html>
 <head>
-<link rel="stylesheet" type="text/css" href="/static/privatemessages.css">
+<link rel="stylesheet" type="text/css" href="{% static 'dialogs/privatemessages.css' %}">
 <script type="text/javascript" src="http://yandex.st/jquery/1.8.3/jquery.min.js"></script>
-<script type="text/javascript" src="/static/jstz.min.js"></script>
-<script type="text/javascript" src="/static/privatemessages.js"></script>
+<script type="text/javascript" src="{% static 'dialogs/jstz.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'dialogs/privatemessages.js' %}"></script>
 {% block head %}{% endblock %}
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>{% block title %}Личные сообщения{% endblock title %}</title>
