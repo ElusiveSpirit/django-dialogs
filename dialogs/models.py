@@ -1,28 +1,49 @@
+import redis
+
 from django.db import models
 from django.db.models.signals import post_save
 
 from django.contrib.auth.models import User
 
+r = redis.StrictRedis()
 
 class Thread(models.Model):
+    name = models.TextField(blank=True)
     participants = models.ManyToManyField(User)
     last_message = models.DateTimeField(null=True, blank=True, db_index=True)
 
-    def get_participants(self):
-        return ", ".join(self.participants)
-
-    def get_participants_exclude_author(self, user):
+    def get_participants_list_usernames(self):
         ret = []
-        participants = self.participants.exclude(id=user.id)
+        participants = self.participants.all()[:]
         for participant in participants:
             ret.append(participant.username)
-        return ", ".join(ret)
+        return ret
+
+    def get_name_for_current_user(self, user):
+        if self.name:
+            return self.name
+        participant_list = self.get_participants_list_usernames()
+        participant_list.remove(user.username)
+        return ", ".join(participant_list)
+
+    def get_total_messages(self):
+        return r.hget(
+            "thread_{}_messages".format(str(self.pk)),
+            "total_messages"
+        )
+
+    def __str__(self):
+        if self.name:
+            return self.name
+        return ", ".join(self.get_participants_list_usernames())
+
 
 class Message(models.Model):
     text = models.TextField()
     sender = models.ForeignKey(User)
     thread = models.ForeignKey(Thread)
     datetime = models.DateTimeField(auto_now_add=True, db_index=True)
+    has_read = models.BooleanField(default=False)
 
 
 def update_last_message_datetime(sender, instance, created, **kwargs):

@@ -57,7 +57,6 @@ def get_messages_info(user_id, thread_id):
         "thread_{}_messages".format(thread_id),
         "total_messages"
     )
-
     ret['sent'] = r.hget(
         "thread_{}_messages".format(thread_id),
         "from_{}".format(user_id)

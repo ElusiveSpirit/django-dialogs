@@ -5,7 +5,7 @@
 {% block head %}
 <script type="text/javascript">
 $(document).ready(function() {
-    activate_chat({{ thread_id }}, "{{ user.username }}", {
+    activate_chat({{ thread.id }}, "{{ user.username }}", {
         "total": {{ messages_total }},
         "sent": {{ messages_sent }},
         "received": {{ messages_received }}
@@ -16,9 +16,10 @@ $(document).ready(function() {
 
 {% block content %}
 {% load pluralize %}
+{% load dialog_name %}
 <div class="chat">
     <div class="partner">
-        <p class="name">{{ partners }}</p>
+        <p class="name">{% dialog_name thread %}</p>
         <p class="messages"><span class="total">{{ messages_total }}</span> {{ messages_total|rupluralize:"сообщение,сообщения,сообщений" }} (<span class="received">{{ messages_received }}</span> получено, <span class="sent">{{ messages_sent }}</span> отправлено)</p>
     </div>
     <div class="conversation">

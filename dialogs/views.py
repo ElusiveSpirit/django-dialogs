@@ -41,7 +41,6 @@ from dialogs.utils import HttpResponseAjaxError, HttpResponseAjax, login_require
 @csrf_exempt
 def send_message_api(request):
     form = MessageAPIForm(request.POST)
-
     if form.is_valid():
         form.save()
         return json_response({"status": "ok"})
@@ -55,27 +54,18 @@ def messages_view(request):
         form = MessageForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
-            return redirect(reverse('dialogs:chat', kwargs={'thread_id' : form.get_thread_id()}))
+            return redirect(reverse('dialogs:chat', kwargs={
+                'thread_id' : form.get_thread_id()
+            }))
     else:
         form = MessageForm()
-    threads = Thread.objects.filter(
-        participants=request.user
-    ).order_by("-last_message")
-
-    r = redis.StrictRedis()
-    user_id = str(request.user.id)
-
-    for thread in threads:
-        thread.partners = thread.get_participants_exclude_author(request.user)
-        thread.total_messages = r.hget(
-            "".join(["thread_", str(thread.id), "_messages"]),
-            "total_messages"
-        )
+    threads = Thread.objects.filter(participants=request.user).order_by("-last_message")
 
     return render(request, 'private_messages.html', {
         "threads": threads,
         'form' : form,
     })
+
 
 @login_required
 def chat_view(request, thread_id):
@@ -84,8 +74,6 @@ def chat_view(request, thread_id):
         id=thread_id,
         participants__id=request.user.id
     )
-    partners = thread.get_participants_exclude_author(request.user)
-
     messages_info = get_messages_info(request.user.id, thread_id)
     messages = thread.message_set.order_by("-datetime")[:30]
 
@@ -95,10 +83,9 @@ def chat_view(request, thread_id):
         pass
 
     return render(request, 'chat.html', {
-        "thread_id": thread_id,
+        "thread": thread,
         "thread_messages": messages,
         "messages_total": messages_info['total'],
         "messages_sent": messages_info['sent'],
         "messages_received": messages_info['received'],
-        "partners": partners,
     })

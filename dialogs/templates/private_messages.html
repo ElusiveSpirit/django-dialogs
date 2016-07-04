@@ -2,11 +2,12 @@
 
 {% block content %}
 {% load pluralize %}
+{% load dialog_name %}
 <div class="private_messages">
     <h1>Собеседники</h1>
     <div class="partners">
     {% for thread in threads %}
-        <p><a href="{% url 'dialogs:chat' thread.id %}">{{ thread.partners }} ({{ thread.total_messages|default_if_none:"0" }} {{ thread.total_messages|rupluralize:"сообщение,сообщения,сообщений" }})</a></p>
+        <p><a href="{% url 'dialogs:chat' thread.id %}">{% dialog_name thread %} ({{ thread.get_total_messages|default_if_none:"0" }} {{ thread.get_total_messages|rupluralize:"сообщение,сообщения,сообщений" }})</a></p>
     {% empty %}
         <p>Пока что собеседников нет.</p>
     {% endfor %}

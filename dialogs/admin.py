@@ -1,3 +1,5 @@
 from django.contrib import admin
 
-# Register your models here.
+from dialogs.models import Thread
+
+admin.site.register(Thread)
