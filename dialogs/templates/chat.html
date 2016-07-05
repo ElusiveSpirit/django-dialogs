@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}{{ partner.username }}{% endblock %}
+{% load dialog_name %}
+{% block title %}{% dialog_name thread %}{% endblock %}
 
 {% block head %}
 <script type="text/javascript">
@@ -16,28 +17,33 @@ $(document).ready(function() {
 
 {% block content %}
 {% load pluralize %}
-{% load dialog_name %}
 <div class="chat">
-    <div class="partner">
-        <p class="name">{% dialog_name thread %}</p>
-        <p class="messages"><span class="total">{{ messages_total }}</span> {{ messages_total|rupluralize:"сообщение,сообщения,сообщений" }} (<span class="received">{{ messages_received }}</span> получено, <span class="sent">{{ messages_sent }}</span> отправлено)</p>
-    </div>
-    <div class="conversation">
-        {% for message in thread_messages reversed %}
+  <div class="dialog-name">
+    <p class="name">{% dialog_name thread %}</p>
+    <p class="messages"><span class="total">{{ messages_total }}</span> {{ messages_total|rupluralize:"сообщение,сообщения,сообщений" }} (<span class="received">{{ messages_received }}</span> получено, <span class="sent">{{ messages_sent }}</span> отправлено)</p>
+  </div>
+  <div class="conversation">
+    <div class="mess-old">
+      {% for message in thread_messages reversed %}
         <div class="message">
-            {% if message.sender == user %}<p class="author we"><span class="datetime">{{ message.datetime|date:"d.m.Y H:i:s" }}</span> {{ user.username }}:</p>{% else %}<p class="author partner"><span class="datetime">{{ message.datetime|date:"d.m.Y H:i:s" }}</span> {{ message.sender }}:</p>{% endif %}
-            <p class="message">{{ message.text|linebreaksbr }}</p>
+          <div class="author {% if message.sender == user %}we{% else %}partner{% endif %}">
+            <span class="datetime">{{ message.datetime|date:"d.m.Y H:i:s" }}</span> {{ message.sender }}:
+          </div>
+          <p class="message">{{ message.text|linebreaksbr }}</p>
         </div>
-        {% endfor %}
+      {% endfor %}
     </div>
-    <form class="message_form">
-        <div class="compose">
-            <textarea rows="1" cols="30" id="message_textarea"></textarea>
-        </div>
-        <div class="send">
-            <button class="btn" type="button">Отправить</button>
-            <p>Вы также можете отправлять сообщения с помощью клавиш Ctrl + Enter.</p>
-        </div>
-    </form>
+    <div class="mess-new">
+    </div>
+  </div>
+  <form class="message_form">
+    <div class="compose">
+      <textarea rows="1" cols="30" id="message_textarea"></textarea>
+    </div>
+    <div class="send">
+      <button class="btn" type="button">Отправить</button>
+      <p>Вы также можете отправлять сообщения с помощью клавиш Ctrl + Enter.</p>
+    </div>
+  </form>
 </div>
 {% endblock content %}

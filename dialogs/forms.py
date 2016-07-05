@@ -64,12 +64,12 @@ class MessageForm(forms.Form):
             True
         )
 
-
 class MessageAPIForm(forms.Form):
     api_key = forms.CharField(max_length=150)
     thread_id = forms.IntegerField()
     sender_id = forms.IntegerField()
     message_text = forms.CharField(max_length=10000)
+    message_status = forms.BooleanField(initial=False, required=False)
 
     def clean_api_key(self):
         if self.cleaned_data['api_key'] != settings.API_KEY:
@@ -95,5 +95,9 @@ class MessageAPIForm(forms.Form):
             self.cleaned_data['thread_id'],
             self.cleaned_data['sender_id'],
             self.cleaned_data['message_text'],
-            self.username
+            self.username,
+            True
         )
+
+    def update_status(self):
+        pass

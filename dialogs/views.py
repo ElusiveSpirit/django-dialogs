@@ -43,6 +43,12 @@ def send_message_api(request):
     form = MessageAPIForm(request.POST)
     if form.is_valid():
         form.save()
+        """
+        if 'message_status' in form.changed_data:
+            form.update_status()
+        else:
+            form.save()
+        """
         return json_response({"status": "ok"})
     else:
         return json_response({"status": "error"})

@@ -84,6 +84,18 @@ def json_response(obj):
     """
     return HttpResponse(json.dumps(obj), content_type="application/json")
 
+
+def update_message_status(message_id):
+    try:
+        Message.objects.get(pk=message_id).update(has_read=True)
+    except Message.DoesNotExist:
+        return
+    r.publish("thread_{}_messages".format(thread_id), json.dumps({
+        "type" : "message_status",
+        "message_id" : message_id,
+    }))
+
+
 def send_message(thread_id,
                  sender_id,
                  message_text,
@@ -104,10 +116,6 @@ def send_message(thread_id,
     (otherwise it is assumed that the message was
     already published in the channel).
     """
-
-    print("thread_id")
-    print(thread_id)
-
     message = Message()
     message.text = message_text
     message.thread_id = thread_id
@@ -121,9 +129,11 @@ def send_message(thread_id,
 
     if pub:
         r.publish("thread_{}_messages".format(thread_id), json.dumps({
-            "timestamp": dateformat.format(message.datetime, 'U'),
-            "sender": sender_name,
-            "text": message_text,
+            "type" : "message",
+            "message_id" : message.id,
+            "timestamp" : dateformat.format(message.datetime, 'U'),
+            "sender" : sender_name,
+            "text" : message_text,
         }))
 
     for key in ("total_messages", "from_".format(sender_id)):

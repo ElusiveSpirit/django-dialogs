@@ -53,16 +53,16 @@ div.chat {
     background-color: #e0e0e0;
 }
 
-div.chat div.partner {
+div.chat div.dialog-name {
     height: 50px;
     padding: 5px;
 }
 
-div.chat div.partner p {
+div.chat div.dialog-name p {
     margin: 0;
 }
 
-div.chat div.partner p.name {
+div.chat div.dialog-name p.name {
     font-weight: bold;
     margin-bottom: 3px;
 }
@@ -85,22 +85,22 @@ div.chat div.conversation {
 }
 
 div.chat div.conversation div.message {
-    padding: 5px 0;
+    padding: 5px;
 }
 
-div.chat div.conversation div.message p {
+div.chat div.conversation div.message p, div {
     margin: 0;
 }
 
-div.chat div.conversation div.message p.author.partner {
+div.chat div.conversation div.message div.author.partner {
     color: #002c64;
 }
 
-div.chat div.conversation div.message p.author.we {
+div.chat div.conversation div.message div.author.we {
     color: #216300;
 }
 
-div.chat div.conversation div.message p.author span.datetime {
+div.chat div.conversation div.message div.author span.datetime {
     font-size: 12px;
 }
 
@@ -158,4 +158,48 @@ div.chat form.message_form div.send button {
     -webkit-box-sizing: border-box;
        -moz-box-sizing: border-box;
             box-sizing: border-box;
+}
+
+div.chat div.conversation div.mess-new div.message {
+    // background-color: gray;
+}
+.spinner {
+  width: 70px;
+  text-align: center;
+}
+
+.spinner > div {
+  width: 12px;
+  height: 12px;
+  background-color: #333;
+
+  border-radius: 100%;
+  display: inline-block;
+  -webkit-animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+  animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+}
+
+.spinner .bounce1 {
+  -webkit-animation-delay: -0.32s;
+  animation-delay: -0.32s;
+}
+
+.spinner .bounce2 {
+  -webkit-animation-delay: -0.16s;
+  animation-delay: -0.16s;
+}
+
+@-webkit-keyframes sk-bouncedelay {
+  0%, 80%, 100% { -webkit-transform: scale(0) }
+  40% { -webkit-transform: scale(1.0) }
+}
+
+@keyframes sk-bouncedelay {
+  0%, 80%, 100% {
+    -webkit-transform: scale(0);
+    transform: scale(0);
+  } 40% {
+    -webkit-transform: scale(1.0);
+    transform: scale(1.0);
+  }
 }

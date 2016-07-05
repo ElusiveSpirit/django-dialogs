@@ -20,10 +20,7 @@ c = tornadoredis.Client()
 c.connect()
 
 class MainHandler(web.RequestHandler):
-    #@tornado.web.asynchronous
-    #@tornado.gen.engine
     def get(self):
-        print('Main')
         self.set_header('Content-Type', 'text/plain')
         self.write('Connected to dialog service')
 
@@ -32,7 +29,6 @@ class MessagesHandler(websocket.WebSocketHandler):
 
     @tornado.gen.engine
     def open(self, thread_id):
-        print('Opened')
         self.client = tornadoredis.Client()
         self.client.connect()
         session_key = self.get_cookie(settings.SESSION_COOKIE_NAME)
@@ -59,34 +55,27 @@ class MessagesHandler(websocket.WebSocketHandler):
 
 
     def on_message(self, message):
-        print('On message')
-        if not message:
-            return
-        if len(message) > 10000:
-            return
-        c.publish(self.channel, json.dumps({
-            "timestamp": int(time.time()),
-            "sender": self.sender_name,
-            "text": message,
-        }))
-        http_client = tornado.httpclient.AsyncHTTPClient()
-        request = tornado.httpclient.HTTPRequest(
-            settings.SEND_MESSAGE_API_URL,
-            method="POST",
-            body=urlencode({
-                "message_text": message.encode("utf-8"),
-                "api_key": settings.API_KEY,
-                "sender_id": self.user_id,
-                "thread_id" : self.thread_id,
-            })
-        )
-        http_client.fetch(request, self.handle_request)
+        data = json.loads(message)
+        if data['type'] == 'message':
+            http_client = tornado.httpclient.AsyncHTTPClient()
+            request = tornado.httpclient.HTTPRequest(
+                settings.SEND_MESSAGE_API_URL,
+                method="POST",
+                body=urlencode({
+                    "message_text": data['text'].encode("utf-8"),
+                    "api_key": settings.API_KEY,
+                    "sender_id": self.user_id,
+                    "thread_id" : self.thread_id,
+                })
+            )
+            http_client.fetch(request, self.handle_request)
+        elif data['type'] == 'message_status':
+            pass
 
     def show_new_message(self, result):
         self.write_message(str(result.body))
 
     def on_close(self):
-        print('On close')
         try:
             self.client.unsubscribe(self.channel)
         except AttributeError:
