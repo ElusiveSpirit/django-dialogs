@@ -48,21 +48,23 @@ class MessageForm(forms.Form):
             )
 
         if thread_queryset.exists():
-            self.thread = thread_queryset[0]
+            thread = thread_queryset[0]
         else:
-            self.thread = Thread.objects.create()
+            thread = Thread.objects.create()
             recipient_list.append(self.user)
             print(recipient_list)
             for recipient in recipient_list:
-                self.thread.participants.add(recipient)
+                thread.participants.add(recipient)
+            thread.save()
 
-        send_message(
-            self.thread.id,
-            self.user.id,
-            self.cleaned_data['message_text'],
-            self.user.username,
-            True
-        )
+        self.message = Message()
+        self.message.text = self.cleaned_data['message_text']
+        self.message.thread = thread
+        self.message.sender = self.user
+        self.message.save()
+
+    def post(self):
+        send_message(self.message)
 
 class MessageAPIForm(forms.Form):
     api_key = forms.CharField(max_length=150)
@@ -91,13 +93,15 @@ class MessageAPIForm(forms.Form):
         return sender.id
 
     def save(self):
-        send_message(
-            self.cleaned_data['thread_id'],
-            self.cleaned_data['sender_id'],
-            self.cleaned_data['message_text'],
-            self.username,
-            True
-        )
+        self.message = Message()
+        self.message.text = self.cleaned_data['message_text']
+        self.message.thread_id = self.cleaned_data['thread_id']
+        self.message.sender_id = self.cleaned_data['sender_id']
+        self.message.has_read = self.cleaned_data['message_status']
+        self.message.save()
+
+    def post(self):
+        send_message(self.message)
 
     def update_status(self):
         pass

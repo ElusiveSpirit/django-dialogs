@@ -42,13 +42,11 @@ from dialogs.utils import HttpResponseAjaxError, HttpResponseAjax, login_require
 def send_message_api(request):
     form = MessageAPIForm(request.POST)
     if form.is_valid():
-        form.save()
-        """
         if 'message_status' in form.changed_data:
             form.update_status()
         else:
             form.save()
-        """
+            form.post()
         return json_response({"status": "ok"})
     else:
         return json_response({"status": "error"})
@@ -60,6 +58,7 @@ def messages_view(request):
         form = MessageForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
+            form.post()
             return redirect(reverse('dialogs:chat', kwargs={
                 'thread_id' : form.get_thread_id()
             }))
@@ -84,9 +83,7 @@ def chat_view(request, thread_id):
     messages = thread.message_set.order_by("-datetime")[:30]
 
     tz = request.COOKIES.get("timezone")
-    if tz:
-        #timezone.activate(tz)
-        pass
+    if tz: timezone.activate(tz)
 
     return render(request, 'chat.html', {
         "thread": thread,

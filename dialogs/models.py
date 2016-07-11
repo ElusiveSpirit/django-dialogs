@@ -27,10 +27,16 @@ class Thread(models.Model):
         return ", ".join(participant_list)
 
     def get_total_messages(self):
+        """
+        Code to peek up from redis.
+
         return r.hget(
             "thread_{}_messages".format(str(self.pk)),
             "total_messages"
         )
+        """
+        return self.message_set.count()
+
 
     def __str__(self):
         if self.name:

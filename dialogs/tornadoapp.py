@@ -96,6 +96,8 @@ class MessagesHandler(websocket.WebSocketHandler):
     def handle_request(self, response):
         pass
 
+# TODO Separate tornado apps 
+
 application = tornado.web.Application([
     (r"/", MainHandler),
     (r'/ws/(?P<thread_id>\d+)/', MessagesHandler),

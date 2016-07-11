@@ -40,7 +40,7 @@ def login_required_ajax(view):
 
 def get_messages_info(user_id, thread_id):
     """
-    Returns a dict:
+    Returns a dict of message info:
     {
         "total",
         "sent",
@@ -96,11 +96,7 @@ def update_message_status(message_id):
     }))
 
 
-def send_message(thread_id,
-                 sender_id,
-                 message_text,
-                 sender_name,
-                 pub=False):
+def send_message(message):
     """
     This function takes Thread object id (first argument),
     sender id (second argument), message text (third argument)
@@ -116,29 +112,22 @@ def send_message(thread_id,
     (otherwise it is assumed that the message was
     already published in the channel).
     """
-    message = Message()
-    message.text = message_text
-    message.thread_id = thread_id
-    message.sender_id = sender_id
-    message.save()
-
-    thread_id = str(thread_id)
-    sender_id = str(sender_id)
+    thread_id = str(message.thread.id)
+    sender_id = str(message.sender.id)
 
     r = redis.StrictRedis()
 
-    if pub:
-        r.publish("thread_{}_messages".format(thread_id), json.dumps({
-            "type" : "message",
-            "message_id" : message.id,
-            "timestamp" : dateformat.format(message.datetime, 'U'),
-            "sender" : sender_name,
-            "text" : message_text,
-        }))
+    r.publish("thread_{}_messages".format(message.thread.id), json.dumps({
+        "type" : "message",
+        "message_id" : message.id,
+        "timestamp" : dateformat.format(message.datetime, 'U'),
+        "sender" : message.sender.username,
+        "text" : message.text,
+    }))
 
-    for key in ("total_messages", "from_".format(sender_id)):
+    for key in ("total_messages", "from_".format(message.sender.id)):
         r.hincrby(
-            "thread_{}_messages".format(thread_id),
+            "thread_{}_messages".format(message.thread.id),
             key,
             1
         )
