@@ -45,7 +45,7 @@ if (timezone == null) {
 }
 
 
-function activate_chat(thread_id, user_name, number_of_messages) {
+function activate_chat(thread_id, user_name, user_id, number_of_messages) {
     $("div.chat form.message_form div.compose textarea").focus();
 
     function scroll_chat_window() {
@@ -84,6 +84,19 @@ function activate_chat(thread_id, user_name, number_of_messages) {
                 $("div.chat p.messages").html('<span class="total">' + number_of_messages["total"] + '</span> ' + getNumEnding(number_of_messages["total"], ["сообщение", "сообщения", "сообщений"]) + ' (<span class="received">' + number_of_messages["received"] + '</span> получено, <span class="sent">' + number_of_messages["sent"] + '</span> отправлено)');
             } else if (message_data.type == "message_status") {
                 $("#" + message_data.message_id).removeClass("not_read");
+            } else if (message_data.type == "person_status") {
+                if (message_data.user_id != user_id) {
+                    if (message_data.typing) {
+                        var text = message_data.username + " набирает сообщение...";
+                        $("div.chat div.conversation div.typing").append('<div class="person" name="' + message_data.username + '">' + text + "</div>");
+                        scroll_chat_window();
+                    } else {
+                        $("div.chat div.conversation div.typing div[name='" + message_data.username + "']").slideUp();
+                        setTimeout(function() {
+                            $("div.chat div.conversation div.typing div[name='" + message_data.username + "']").remove();
+                        }, 1000)
+                    }
+                }
             } else if (message_data.type == "message_error") {
 
             } else if (message_data.type == "error") {
@@ -123,6 +136,15 @@ function activate_chat(thread_id, user_name, number_of_messages) {
     }
     $("div.chat div.conversation div.message.not_read").live("hover", update_status);
 
+    var typing = false;
+
+    function send_status_typing(status) {
+        ws.send(JSON.stringify({
+          "type" : "person_status",
+          "typing" : status,
+        }));
+    }
+
     function send_message() {
         var textarea = $("textarea#message_textarea");
         if (textarea.val() == "") {
@@ -151,20 +173,34 @@ function activate_chat(thread_id, user_name, number_of_messages) {
 
         ws.send(data);
         textarea.val("");
+        // TODO Lags when user send message and continue typing
+        typing = false;
+        send_status_typing(typing);
     }
 
     $("form.message_form div.send button").click(send_message);
 
     function update_messages() {
+        // TODO Async process
         var mess_list = $("div.chat div.conversation div.message.not_read").trigger('mouseenter');
     }
 
     $("textarea#message_textarea").focus(update_messages);
+    $("textarea#message_textarea").focusout(function (e) {
+        if (typing) {
+            typing = false;
+            send_status_typing(typing);
+        }
+    });
 
     $("textarea#message_textarea").keydown(function (e) {
         // Ctrl + Enter
         if (e.ctrlKey && e.keyCode == 13) {
             send_message();
+        }
+        if (!typing) {
+            typing = true;
+            send_status_typing(typing);
         }
         update_messages();
     });

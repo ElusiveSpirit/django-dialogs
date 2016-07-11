@@ -16,8 +16,8 @@ session_engine = import_module(settings.SESSION_ENGINE)
 from django.contrib.auth.models import User
 from dialogs.models import Thread
 
-c = tornadoredis.Client()
-c.connect()
+pub_client = tornadoredis.Client()
+pub_client.connect()
 
 
 class MainHandler(web.RequestHandler):
@@ -36,7 +36,7 @@ class MessagesHandler(websocket.WebSocketHandler):
         session = session_engine.SessionStore(session_key)
         try:
             self.user_id = session["_auth_user_id"]
-            self.sender_name = User.objects.get(id=self.user_id).username
+            self.username = User.objects.get(id=self.user_id).username
         except (KeyError, User.DoesNotExist):
             self.close()
             return
@@ -46,7 +46,7 @@ class MessagesHandler(websocket.WebSocketHandler):
         ).exists():
             self.close()
             return
-        self.channel = "".join(['thread_', thread_id,'_messages'])
+        self.channel = "thread_{}_messages".format(thread_id)
         self.thread_id = thread_id
         yield tornado.gen.Task(self.client.subscribe, self.channel)
         self.client.listen(self.show_new_message)
@@ -73,6 +73,16 @@ class MessagesHandler(websocket.WebSocketHandler):
                 "message_id" : data['message_id'],
                 "message_status" : data['message_status'],
             })
+        elif data['type'] == 'person_status':
+            pub_client.publish(self.channel, json.dumps({
+                "type" : "person_status",
+                "user_id" : self.user_id,
+                "username" : self.username,
+                "typing" : data['typing'],
+            }))
+            return
+        else:
+            return
 
         http_client = tornado.httpclient.AsyncHTTPClient()
         request = tornado.httpclient.HTTPRequest(
@@ -83,7 +93,10 @@ class MessagesHandler(websocket.WebSocketHandler):
         http_client.fetch(request, self.handle_request)
 
     def show_new_message(self, result):
-        self.write_message(str(result.body))
+        try:
+            self.write_message(str(result.body))
+        except tornado.websocket.WebSocketClosedError:
+            pass
 
     def on_close(self):
         try:

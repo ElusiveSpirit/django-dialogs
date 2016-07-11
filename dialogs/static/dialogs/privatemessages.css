@@ -167,6 +167,13 @@ div.chat form.message_form div.send button {
 div.chat div.conversation div.mess-new div.message {
     // background-color: gray;
 }
+
+div.chat div.conversation div.typing div.person {
+    padding: 2px 5px;
+    color: gray;
+    font-size: small;
+}
+
 .spinner {
   width: 70px;
   text-align: center;

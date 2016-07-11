@@ -6,7 +6,7 @@
 {% block head %}
 <script type="text/javascript">
 $(document).ready(function() {
-    activate_chat({{ thread.id }}, "{{ user.username }}", {
+    activate_chat({{ thread.id }}, "{{ user.username }}", {{ user.id }}, {
         "total": {{ messages_total }},
         "sent": {{ messages_sent }},
         "received": {{ messages_received }}
@@ -29,6 +29,8 @@ $(document).ready(function() {
       {% endfor %}
     </div>
     <div class="mess-new">
+    </div>
+    <div class="typing">
     </div>
   </div>
   <form class="message_form">
