@@ -25,12 +25,7 @@ $(document).ready(function() {
   <div class="conversation">
     <div class="mess-old">
       {% for message in thread_messages reversed %}
-        <div class="message">
-          <div class="author {% if message.sender == user %}we{% else %}partner{% endif %}">
-            <span class="datetime">{{ message.datetime|date:"d.m.Y H:i:s" }}</span> {{ message.sender }}:
-          </div>
-          <p class="message">{{ message.text|linebreaksbr }}</p>
-        </div>
+        {% include "includes/message.html" %}
       {% endfor %}
     </div>
     <div class="mess-new">

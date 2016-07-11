@@ -88,6 +88,10 @@ div.chat div.conversation div.message {
     padding: 5px;
 }
 
+div.chat div.conversation div.message.not_read {
+    background-color: #c3c3c3;
+}
+
 div.chat div.conversation div.message p, div {
     margin: 0;
 }

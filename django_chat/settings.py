@@ -31,6 +31,7 @@ SESSION_ENGINE = 'redis_sessions.session'
 API_KEY = '$0m3-U/\/1qu3-K3Y'
 
 SEND_MESSAGE_API_URL = 'http://127.0.0.1:8000/dialogs/send_message_api/'
+UPDATE_MESSAGE_STATUS_API_URL = 'http://127.0.0.1:8000/dialogs/update_message_status_api/'
 # Application definition
 
 INSTALLED_APPS = [

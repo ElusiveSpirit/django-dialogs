@@ -32,7 +32,7 @@ from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.models import User
 
 from dialogs.models import Thread, Message
-from dialogs.forms import MessageForm, MessageAPIForm
+from dialogs.forms import MessageForm, SendMessageAPIForm, UpdateMessageStatusAPIForm
 from dialogs.utils import json_response, send_message, get_messages_info
 from dialogs.utils import HttpResponseAjaxError, HttpResponseAjax, login_required_ajax
 
@@ -40,13 +40,25 @@ from dialogs.utils import HttpResponseAjaxError, HttpResponseAjax, login_require
 @require_POST
 @csrf_exempt
 def send_message_api(request):
-    form = MessageAPIForm(request.POST)
+    form = SendMessageAPIForm(request.POST)
     if form.is_valid():
         if 'message_status' in form.changed_data:
             form.update_status()
         else:
             form.save()
             form.post()
+        return json_response({"status": "ok"})
+    else:
+        return json_response({"status": "error"})
+
+
+@require_POST
+@csrf_exempt
+def update_message_status_api(request):
+    form = UpdateMessageStatusAPIForm(request.POST)
+    if form.is_valid():
+        form.update_status()
+        form.post()
         return json_response({"status": "ok"})
     else:
         return json_response({"status": "error"})

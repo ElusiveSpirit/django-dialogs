@@ -3,7 +3,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from dialogs.models import Message, Thread
-from dialogs.utils import send_message
+from dialogs.utils import send_message, update_message_status
 
 
 class MessageForm(forms.Form):
@@ -27,10 +27,10 @@ class MessageForm(forms.Form):
             except User.DoesNotExist:
                 except_list.append(name)
         if len(except_list) > 0:
-            raise forms.ValidationrError(u"Next user's are not exist: {}.".format(", ".join(except_list)))
+            raise forms.ValidationError(u"Next user's are not exist: {}.".format(", ".join(except_list)))
 
         if self.user in recipient_list:
-            raise forms.ValidationrError("You cannot send messages to yourself.")
+            raise forms.ValidationError("You cannot send messages to yourself.")
         return recipient_list
 
     def get_thread_id(self):
@@ -66,31 +66,59 @@ class MessageForm(forms.Form):
     def post(self):
         send_message(self.message)
 
-class MessageAPIForm(forms.Form):
+class AbstractMessageAPIForm(forms.Form):
     api_key = forms.CharField(max_length=150)
     thread_id = forms.IntegerField()
     sender_id = forms.IntegerField()
-    message_text = forms.CharField(max_length=10000)
-    message_status = forms.BooleanField(initial=False, required=False)
 
     def clean_api_key(self):
         if self.cleaned_data['api_key'] != settings.API_KEY:
-            raise forms.ValidationrError("Wrong api key")
+            raise forms.ValidationError("Wrong api key")
 
     def clean_thread_id(self):
         try:
-            thread = Thread.objects.get(id=self.cleaned_data['thread_id'])
+            self.thread = Thread.objects.get(id=self.cleaned_data['thread_id'])
         except Thread.DoesNotExist:
-            raise forms.ValidationrError("No such thread")
-        return thread.id
+            raise forms.ValidationError("No such thread")
+        return self.thread.id
 
     def clean_sender_id(self):
         try:
-            sender = User.objects.get(id=self.cleaned_data['sender_id'])
+            self.sender = User.objects.get(id=self.cleaned_data['sender_id'])
         except User.DoesNotExist:
-            raise forms.ValidationrError("No such user")
-        self.username = sender.username
-        return sender.id
+            raise forms.ValidationError("No such user")
+        self.username = self.sender.username
+        return self.sender.id
+
+
+class UpdateMessageStatusAPIForm(AbstractMessageAPIForm):
+    message_id = forms.IntegerField()
+    message_status = forms.BooleanField(initial=False, required=False)
+
+    def clean_message_id(self):
+        try:
+            self.message = Message.objects.get(id=self.cleaned_data['message_id'])
+        except Thread.DoesNotExist:
+            raise forms.ValidationError("No such message")
+        return self.message.id
+
+    def clean(self):
+        if (self.sender not in self.thread.participants.all() or
+            self.sender == self.message.sender):
+            raise forms.ValidationError("Wrong input params")
+
+    def update_status(self):
+        self.message.has_read = self.cleaned_data['message_status']
+        self.message.save()
+
+    def post(self):
+        update_message_status(self.message)
+
+
+
+class SendMessageAPIForm(AbstractMessageAPIForm):
+    message_text = forms.CharField(max_length=10000)
+    message_status = forms.BooleanField(initial=False, required=False)
 
     def save(self):
         self.message = Message()

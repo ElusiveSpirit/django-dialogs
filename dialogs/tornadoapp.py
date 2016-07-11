@@ -19,6 +19,7 @@ from dialogs.models import Thread
 c = tornadoredis.Client()
 c.connect()
 
+
 class MainHandler(web.RequestHandler):
     def get(self):
         self.set_header('Content-Type', 'text/plain')
@@ -53,24 +54,33 @@ class MessagesHandler(websocket.WebSocketHandler):
     def check_origin(self, origin):
         return True
 
-
     def on_message(self, message):
         data = json.loads(message)
         if data['type'] == 'message':
-            http_client = tornado.httpclient.AsyncHTTPClient()
-            request = tornado.httpclient.HTTPRequest(
-                settings.SEND_MESSAGE_API_URL,
-                method="POST",
-                body=urlencode({
-                    "message_text": data['text'].encode("utf-8"),
-                    "api_key": settings.API_KEY,
-                    "sender_id": self.user_id,
-                    "thread_id" : self.thread_id,
-                })
-            )
-            http_client.fetch(request, self.handle_request)
+            url = settings.SEND_MESSAGE_API_URL
+            body = urlencode({
+                "message_text": data['text'].encode("utf-8"),
+                "api_key": settings.API_KEY,
+                "sender_id": self.user_id,
+                "thread_id" : self.thread_id,
+            })
         elif data['type'] == 'message_status':
-            pass
+            url = settings.UPDATE_MESSAGE_STATUS_API_URL
+            body = urlencode({
+                "api_key": settings.API_KEY,
+                "sender_id": self.user_id,
+                "thread_id" : self.thread_id,
+                "message_id" : data['message_id'],
+                "message_status" : data['message_status'],
+            })
+
+        http_client = tornado.httpclient.AsyncHTTPClient()
+        request = tornado.httpclient.HTTPRequest(
+            url,
+            method="POST",
+            body=body
+        )
+        http_client.fetch(request, self.handle_request)
 
     def show_new_message(self, result):
         self.write_message(str(result.body))
@@ -94,9 +104,10 @@ class MessagesHandler(websocket.WebSocketHandler):
         )
 
     def handle_request(self, response):
+        # TODO send error message back
         pass
 
-# TODO Separate tornado apps 
+# TODO Separate tornado apps
 
 application = tornado.web.Application([
     (r"/", MainHandler),

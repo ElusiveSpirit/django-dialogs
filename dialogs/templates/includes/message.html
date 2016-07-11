@@ -1,0 +1,6 @@
+<div id="{{ message.id }}" class="message {% if not message.has_read %}not_read{% endif %}">
+  <div class="author {% if message.sender == user %}we{% else %}partner{% endif %}">
+    <span class="datetime">{{ message.datetime|date:"d.m.Y H:i:s" }}</span> {{ message.sender }}:
+  </div>
+  <p class="message">{{ message.text|linebreaksbr }}</p>
+</div>
