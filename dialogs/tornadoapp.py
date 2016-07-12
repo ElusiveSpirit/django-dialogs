@@ -26,7 +26,85 @@ class MainHandler(web.RequestHandler):
         self.write('Connected to dialog service')
 
 
+class NotificationHandler(websocket.WebSocketHandler):
+    @tornado.gen.engine
+    def open(self, sess_id):
+        self.client = tornadoredis.Client()
+        self.client.connect()
+        session_key = self.get_cookie(settings.SESSION_COOKIE_NAME)
+        if sess_id != session_key:
+            self.close()
+            return
+        session = session_engine.SessionStore(session_key)
+        try:
+            self.user_id = session["_auth_user_id"]
+            self.username = User.objects.get(id=self.user_id).username
+        except (KeyError, User.DoesNotExist):
+            self.close()
+            return
+
+        thread_list = Thread.objects.filter(
+            participants__id=self.user_id
+        ).all()
+
+        self.channel_list = [ 'user_{}'.format(self.user_id) ]
+        for thread in thread_list:
+            self.channel_list.append("thread_{}_messages".format(thread.id))
+
+        self.thread_id = thread_id
+        yield tornado.gen.Task(self.client.subscribe, self.channel_list)
+        self.client.listen(self.action)
+
+    def check_origin(self, origin):
+        return True
+
+    def on_message(self, message):
+        pass
+
+    def action(self, result):
+        data = json.loads(result)
+        if data['type'] == 'open':
+            """
+            Dialog has opened. So no more needed to push notifications
+            """
+            pass
+        elif data['type'] == 'message':
+            """
+            New message. If needed -> show notification
+
+            try:
+                self.write_message(str(result.body))
+            except tornado.websocket.WebSocketClosedError:
+                pass
+            """
+            pass
+
+
+    def on_close(self):
+        try:
+            self.client.unsubscribe(self.channel_list)
+        except AttributeError:
+            pass
+        def check():
+            if self.client.connection.in_progress:
+                tornado.ioloop.IOLoop.instance().add_timeout(
+                    datetime.timedelta(0.00001),
+                    check
+                )
+            else:
+                self.client.disconnect()
+        tornado.ioloop.IOLoop.instance().add_timeout(
+            datetime.timedelta(0.00001),
+            check
+        )
+
+    def handle_request(self, response):
+        # TODO send error message back
+        pass
+
+
 class MessagesHandler(websocket.WebSocketHandler):
+    # TODO Create another redis channel for dialogs info 
 
     @tornado.gen.engine
     def open(self, thread_id):
@@ -125,4 +203,5 @@ class MessagesHandler(websocket.WebSocketHandler):
 application = tornado.web.Application([
     (r"/", MainHandler),
     (r'/ws/(?P<thread_id>\d+)/', MessagesHandler),
+    (r'/user/(?P<sess_id>\d+)/', NotificationHandler),
 ])
