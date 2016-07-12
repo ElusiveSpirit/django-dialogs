@@ -103,8 +103,8 @@ class NotificationHandler(websocket.WebSocketHandler):
         pass
 
 
-class MessagesHandler(websocket.WebSocketHandler):
-    # TODO Create another redis channel for dialogs info 
+class DialogsHandler(websocket.WebSocketHandler):
+    # TODO Create another redis channel for dialogs info
 
     @tornado.gen.engine
     def open(self, thread_id):
@@ -127,7 +127,7 @@ class MessagesHandler(websocket.WebSocketHandler):
         self.channel = "thread_{}_messages".format(thread_id)
         self.thread_id = thread_id
         yield tornado.gen.Task(self.client.subscribe, self.channel)
-        self.client.listen(self.show_new_message)
+        self.client.listen(self.resend_response)
 
     def check_origin(self, origin):
         return True
@@ -170,7 +170,7 @@ class MessagesHandler(websocket.WebSocketHandler):
         )
         http_client.fetch(request, self.handle_request)
 
-    def show_new_message(self, result):
+    def resend_response(self, result):
         try:
             self.write_message(str(result.body))
         except tornado.websocket.WebSocketClosedError:
@@ -202,6 +202,6 @@ class MessagesHandler(websocket.WebSocketHandler):
 
 application = tornado.web.Application([
     (r"/", MainHandler),
-    (r'/ws/(?P<thread_id>\d+)/', MessagesHandler),
+    (r'/ws/(?P<thread_id>\d+)/', DialogsHandler),
     (r'/user/(?P<sess_id>\d+)/', NotificationHandler),
 ])

@@ -28,7 +28,7 @@ class Thread(models.Model):
 
     def get_total_messages(self):
         """
-        Code to peek up from redis.
+        Code to peek up info from redis.
 
         return r.hget(
             "thread_{}_messages".format(str(self.pk)),
@@ -36,6 +36,13 @@ class Thread(models.Model):
         )
         """
         return self.message_set.count()
+
+
+    def get_unread_messages_count(self):
+        return self.message_set.filter(has_read=False).count()
+
+    def get_user_unread_messages_count(self, user):
+        return self.message_set.filter(has_read=False).exclude(sender=user).count()
 
 
     def __str__(self):

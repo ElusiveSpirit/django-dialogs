@@ -17,7 +17,7 @@ def send_message_api(request):
         )
 """
 import json
-
+import pytz
 import redis
 
 from django.shortcuts import render_to_response, get_object_or_404, render, redirect
@@ -76,11 +76,17 @@ def messages_view(request):
             }))
     else:
         form = MessageForm()
-    threads = Thread.objects.filter(participants=request.user).order_by("-last_message")
+    thread_list = Thread.objects.filter(participants=request.user).order_by("-last_message")
+
+    unread_messages = 0
+    for thread in thread_list:
+        thread.unread_messages_count = thread.get_user_unread_messages_count(request.user)
+        unread_messages += thread.unread_messages_count
 
     return render(request, 'private_messages.html', {
-        "threads": threads,
+        "thread_list": thread_list,
         'form' : form,
+        'unread_messages' : unread_messages,
     })
 
 
@@ -92,10 +98,10 @@ def chat_view(request, thread_id):
         participants__id=request.user.id
     )
     messages_info = get_messages_info(request.user.id, thread_id)
-    messages = thread.message_set.order_by("-datetime")[:30]
+    messages = thread.message_set.order_by("-datetime")[:]
 
     tz = request.COOKIES.get("timezone")
-    if tz: timezone.activate(tz)
+    if tz: timezone.activate(pytz.timezone(tz))
 
     return render(request, 'chat.html', {
         "thread": thread,
