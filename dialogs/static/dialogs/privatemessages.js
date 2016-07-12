@@ -198,7 +198,7 @@ function activate_chat(thread_id, user_name, user_id, number_of_messages) {
         if (e.ctrlKey && e.keyCode == 13) {
             send_message();
         }
-        if (!typing) {
+        if (!typing && e.keyCode >= 32) {
             typing = true;
             send_status_typing(typing);
         }
