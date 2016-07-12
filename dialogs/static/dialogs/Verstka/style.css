@@ -2,77 +2,90 @@ body {
 	background: #F4F4F4;
 }
 
-.header {
+div.pos-mid {
 	margin: 0 auto;
+}
+
+div.scrollbar div.pos-mid {
+    max-width: 1350px;
+}
+
+div.header {
 	background: white;
-	width: 1600px;
 	height: 80px;
 	padding: 5px;
 	border: solid 2px #AFAFAF;
+	margin-top: 74px;
 	margin-bottom: 5px;
 }
 
-.content {
-	margin: 0 auto;
+div.content {
 	background: #F4F4F4;
-	width: 1600px;
 	height: 1014px;
+	width: 90%;
+	max-width: 1100px;
 	padding: 5px;
 }
 
-.footer {
+div.footer {
 	margin: 0 auto;
 	background: white;
-	width: 1600px;
 	height: 80px;
 	padding: 5px;
 	border: solid 2px #AFAFAF;
 	margin-top: 5px;
 }
 
-.sidebar-left {
+div.sidebar-left {
 	background: white;
-	width: 250px;
+	width: 200px;
 	height: 1000px;
 	padding: 5px;
 	border: solid 2px #AFAFAF;
-	margin-left: 75px;
+	margin: 0 20px;
 	float:left;
 }
 
-.sidebar-right {
+div.sidebar-right {
 	background: white;
-	width: 250px;
+	width: 200px;
 	height: 1000px;
 	padding: 5px;
 	border: solid 2px #AFAFAF;
-	margin-left: 50px;
+	margin: 0 20px;
 	float:left;
 }
 
-.center {
+div.center {
 	background: white;
-	width: 800px;
+	width: 500px;
 	height: 1000px;
 	padding: 5px;
 	border: solid 2px #AFAFAF;
-	margin-left: 50px;
+	margin: 0 20px;
 	float:left;
 }
 
-.scrollbar {
-	margin: 0 auto;
+div.main {
+	width: 95%;
+	max-width: 1300px;
+}
+
+div.scrollbar {
+  position: absolute;
+  top: 0px;
+  left: 0px;
 	background: black;
-	width: 1870px;
+	width: 100%;
 	height: 50px;
 	padding: 10px;
 	border: solid 2px #AFAFAF;
 	margin-bottom: 5px;
 }
 
-.radius {
+div.radius {
 	border-radius: 30px;
-    box-shadow: 0 0 0 3px #AFAFAF, 0 0 13px #333;
+  box-shadow: 0 0 0 3px #AFAFAF, 0 0 13px #333;
 	background: white;
 	width: 20px;
 	padding: 15px;
