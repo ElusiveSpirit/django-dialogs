@@ -3,6 +3,23 @@ html, body {
     margin: 0;
 }
 
+div.notification-container {
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    width: 250px;
+    height: 400px;
+}
+
+div.notification-container div.notification {
+    padding: 15px;
+    border: 1px solid #d6e9c6;
+    border-radius: 4px;
+    color: #3c763d;
+    background-color: #dff0d8;
+    opacity: 1.0;
+}
+
 body {
     font-family: Geneva, Arial, Helvetica, sans-serif;
     font-size: 14px;

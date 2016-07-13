@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="privatemessages.css" />
+  </head>
+  <body>
+    <script src="notifications.js"></script>
+    <script>
+        var not = new NotificationHandler();
+        not.addNotification(new Notification("Hello world1"))
+        function a() {
+            not.addNotification(new Notification("Hello world"));
+        }
+    </script>
+   <button onclick="a();">ADD</button>
+  </body>
+</html>
