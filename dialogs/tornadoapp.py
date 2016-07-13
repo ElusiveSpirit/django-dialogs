@@ -26,18 +26,19 @@ class MainHandler(web.RequestHandler):
         self.write('Connected to dialog service')
 
 
-class NotificationHandler(websocket.WebSocketHandler):
+class DialogsHandler(websocket.WebSocketHandler):
+    # TODO Create another redis channel for dialogs info
+
     @tornado.gen.engine
-    def open(self, sess_id):
+    def open(self, user_id):
         self.client = tornadoredis.Client()
         self.client.connect()
         session_key = self.get_cookie(settings.SESSION_COOKIE_NAME)
-        if sess_id != session_key:
-            self.close()
-            return
         session = session_engine.SessionStore(session_key)
         try:
             self.user_id = session["_auth_user_id"]
+            if user_id != self.user_id:
+                raise User.DoesNotExist
             self.username = User.objects.get(id=self.user_id).username
         except (KeyError, User.DoesNotExist):
             self.close()
@@ -51,90 +52,25 @@ class NotificationHandler(websocket.WebSocketHandler):
         for thread in thread_list:
             self.channel_list.append("thread_{}_messages".format(thread.id))
 
-        self.thread_id = thread_id
         yield tornado.gen.Task(self.client.subscribe, self.channel_list)
-        self.client.listen(self.action)
-
-    def check_origin(self, origin):
-        return True
-
-    def on_message(self, message):
-        pass
-
-    def action(self, result):
-        data = json.loads(result)
-        if data['type'] == 'open':
-            """
-            Dialog has opened. So no more needed to push notifications
-            """
-            pass
-        elif data['type'] == 'message':
-            """
-            New message. If needed -> show notification
-
-            try:
-                self.write_message(str(result.body))
-            except tornado.websocket.WebSocketClosedError:
-                pass
-            """
-            pass
-
-
-    def on_close(self):
-        try:
-            self.client.unsubscribe(self.channel_list)
-        except AttributeError:
-            pass
-        def check():
-            if self.client.connection.in_progress:
-                tornado.ioloop.IOLoop.instance().add_timeout(
-                    datetime.timedelta(0.00001),
-                    check
-                )
-            else:
-                self.client.disconnect()
-        tornado.ioloop.IOLoop.instance().add_timeout(
-            datetime.timedelta(0.00001),
-            check
-        )
-
-    def handle_request(self, response):
-        # TODO send error message back
-        pass
-
-
-class DialogsHandler(websocket.WebSocketHandler):
-    # TODO Create another redis channel for dialogs info
-
-    @tornado.gen.engine
-    def open(self, thread_id):
-        self.client = tornadoredis.Client()
-        self.client.connect()
-        session_key = self.get_cookie(settings.SESSION_COOKIE_NAME)
-        session = session_engine.SessionStore(session_key)
-        try:
-            self.user_id = session["_auth_user_id"]
-            self.username = User.objects.get(id=self.user_id).username
-        except (KeyError, User.DoesNotExist):
-            self.close()
-            return
-        if not Thread.objects.filter(
-            id=thread_id,
-            participants__id=self.user_id
-        ).exists():
-            self.close()
-            return
-        self.channel = "thread_{}_messages".format(thread_id)
-        self.thread_id = thread_id
-        yield tornado.gen.Task(self.client.subscribe, self.channel)
         self.client.listen(self.resend_response)
+
 
     def check_origin(self, origin):
         return True
 
     def on_message(self, message):
         data = json.loads(message)
-        if data['type'] == 'message':
+        if data['type'] == 'open_dialog':
+            if not Thread.objects.filter(
+                id=data['thread_id'],
+                participants__id=self.user_id
+            ).exists():
+                self.close()
+                return
+            self.thread_id = data['thread_id']
+            return
+        elif data['type'] == 'message':
             url = settings.SEND_MESSAGE_API_URL
             body = urlencode({
                 "message_text": data['text'].encode("utf-8"),
@@ -152,7 +88,7 @@ class DialogsHandler(websocket.WebSocketHandler):
                 "message_status" : data['message_status'],
             })
         elif data['type'] == 'person_status':
-            pub_client.publish(self.channel, json.dumps({
+            pub_client.publish("thread_{}_messages".format(self.thread_id), json.dumps({
                 "type" : "person_status",
                 "user_id" : self.user_id,
                 "username" : self.username,
@@ -202,6 +138,5 @@ class DialogsHandler(websocket.WebSocketHandler):
 
 application = tornado.web.Application([
     (r"/", MainHandler),
-    (r'/ws/(?P<thread_id>\d+)/', DialogsHandler),
-    (r'/user/(?P<sess_id>\d+)/', NotificationHandler),
+    (r'/ws/(?P<user_id>\d+)/', DialogsHandler),
 ])

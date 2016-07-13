@@ -45,43 +45,60 @@ if (timezone == null) {
 }
 
 
-function activate_chat(thread_id, user_name, user_id, number_of_messages) {
+function activate_chat(user_name, user_id) {
     $("div.chat form.message_form div.compose textarea").focus();
 
     function scroll_chat_window() {
         $("div.chat div.conversation").scrollTop($("div.chat div.conversation")[0].scrollHeight);
     }
 
+    function show_message_notification(sender, message_data.text) {
+
+    }
+
     scroll_chat_window();
 
     var ws;
+    var thread_id = -1;
     function start_chat_ws() {
-        ws = new WebSocket("ws://127.0.0.1:8888/ws/" + thread_id + "/");
+        ws = new WebSocket("ws://127.0.0.1:8888/ws/" + user_id + "/");
+
+        ws.onopen = function(event) {
+            var url_path = window.location.pathname.split( '/' );
+            if (url_path[2] == 'chat') {
+                thread_id = url_path[3];
+                ws.send(JSON.stringify({
+                  "type" : "open_dialog",
+                  "thread_id" : thread_id,
+                }));
+            }
+        }
 
         ws.onmessage = function(event) {
             var message_data = JSON.parse(event.data);
 
             // console.log("type = " + message_data.type);
             if (message_data.type == "message") {
-                var date = new Date(message_data.timestamp*1000);
-                var time = $.map([date.getHours(), date.getMinutes(), date.getSeconds()], function(val, i) {
-                    return (val < 10) ? '0' + val : val;
-                });
+                if (thread_id == message_data.thread_id) {
+                    var date = new Date(message_data.timestamp*1000);
+                    var time = $.map([date.getHours(), date.getMinutes(), date.getSeconds()], function(val, i) {
+                        return (val < 10) ? '0' + val : val;
+                    });
 
-                var status = (message_data.has_read) ? "" : " not_read";
-                var input_html = '<div id="' + message_data.message_id + '" class="message' + status + '">';
-                if (message_data.sender == user_name) {
-                    $(".mess-new .message:first-child").remove();
-                    input_html += '<div class="author we">';
+                    var status = (message_data.has_read) ? "" : " not_read";
+                    var input_html = '<div id="' + message_data.message_id + '" class="message' + status + '">';
+                    if (message_data.sender == user_name) {
+                        $(".mess-new .message:first-child").remove();
+                        input_html += '<div class="author we">';
+                    } else {
+                        input_html += '<div class="author partner">';
+                    }
+                    $("div.mess-old").append(input_html + '<span class="datetime">' + time[0] + ':' + time[1] + ':' + time[2] + '</span> ' + message_data.sender + ':</div><p class="message">' + message_data.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g, '<br />') + '</p></div>');
+                    scroll_chat_window();
                 } else {
-                    input_html += '<div class="author partner">';
-                    number_of_messages["total"]++;
-                    number_of_messages["received"]++;
+                    show_message_notification(message_data.sender, message_data.text);
                 }
-                $("div.mess-old").append(input_html + '<span class="datetime">' + time[0] + ':' + time[1] + ':' + time[2] + '</span> ' + message_data.sender + ':</div><p class="message">' + message_data.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g, '<br />') + '</p></div>');
-                scroll_chat_window();
 
-                $("div.chat p.messages").html('<span class="total">' + number_of_messages["total"] + '</span> ' + getNumEnding(number_of_messages["total"], ["сообщение", "сообщения", "сообщений"]) + ' (<span class="received">' + number_of_messages["received"] + '</span> получено, <span class="sent">' + number_of_messages["sent"] + '</span> отправлено)');
             } else if (message_data.type == "message_status") {
                 $("#" + message_data.message_id).removeClass("not_read");
             } else if (message_data.type == "person_status") {
@@ -162,9 +179,6 @@ function activate_chat(thread_id, user_name, user_id, number_of_messages) {
         });
         $("div.mess-new").append('<div class="message not_read"><div class="author we"><span class="datetime">' + time[0] + ':' + time[1] + ':' + time[2] + '</span> ' + user_name + ':<div class="spinner"><div class="bounce1"></div><div class="bounce2"></div><div class="bounce3"></div></div></div><p class="message">' + textarea.val()) + '</p></div>';
         scroll_chat_window();
-        number_of_messages["total"]++;
-        number_of_messages["sent"]++;
-        $("div.chat p.messages").html('<span class="total">' + number_of_messages["total"] + '</span> ' + getNumEnding(number_of_messages["total"], ["сообщение", "сообщения", "сообщений"]) + ' (<span class="received">' + number_of_messages["received"] + '</span> получено, <span class="sent">' + number_of_messages["sent"] + '</span> отправлено)');
 
         var data = JSON.stringify({
           "type" : "message",

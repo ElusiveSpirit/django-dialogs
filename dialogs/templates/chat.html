@@ -32,16 +32,3 @@
   </form>
 </div>
 {% endblock content %}
-
-{% block js %}
-<script type="text/javascript">
-$(document).ready(function() {
-    activate_chat({{ thread.id }}, "{{ user.username }}", {{ user.id }}, {
-        "total": {{ messages_total }},
-        "sent": {{ messages_sent }},
-        "received": {{ messages_received }}
-    });
-    activate_notifications();
-});
-</script>
-{% endblock %}

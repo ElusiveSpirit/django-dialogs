@@ -89,6 +89,7 @@ def update_message_status(message):
     r = redis.StrictRedis()
     r.publish("thread_{}_messages".format(message.thread.id), json.dumps({
         "type" : "message_status",
+        "thread_id" : message.thread.id,
         "message_id" : message.id,
     }))
 
@@ -114,6 +115,7 @@ def send_message(message):
 
     r.publish("thread_{}_messages".format(message.thread.id), json.dumps({
         "type" : "message",
+        "thread_id" : message.thread.id,
         "message_id" : message.id,
         "timestamp" : dateformat.format(message.datetime, 'U'),
         "sender" : message.sender.username,
