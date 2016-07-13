@@ -1,12 +1,16 @@
 /*
-NotificationHandler class
+    NotificationHandler class
+----------------------------------------------------
+Required:
+    jquery,
+    move
 
 Shows notification array and organize it's
 */
 
 function NotificationHandler() {
     this._queue = [];
-    this._timeout = 2000;
+    this._timeout = 3000;
 
     this._container = document.createElement('div');
     this._container.className = "notification-container";
@@ -23,17 +27,13 @@ NotificationHandler.prototype.addNotification = function(notification) {
 
 NotificationHandler.prototype.removeNotification = function(handler, notification) {
     var index = notification.getIndex();
-    var id_to_remove;
     handler._queue.forEach(function(item, i, arr) {
         if (item.getIndex() == index) {
-            item.hide();
-            id_to_remove = i;
+            var removing_obj = item;
+            delete handler._queue[i];
+            removing_obj.hide(handler._queue[i + 1]);
             return false;
         }
-    });
-    delete handler._queue[id_to_remove];
-    handler._queue.forEach(function(item, i, arr) {
-        item.moveUp(i);
     });
 }
 
@@ -46,8 +46,8 @@ function Notification(text) {
     this._text = text;
     // TODO Get object's height instead
     this._moving_length = 50;
-    this._template_top = "";
-    this._template_bot = "";
+    this._template_top = '';
+    this._template_bot = '';
 
     this._obj = document.createElement('div');
     this._obj.className = "notification";
@@ -57,7 +57,6 @@ function Notification(text) {
 
 Notification.prototype.getObj = function(level) {
     this._level = level;
-    this._obj.setAttribute("style", "margin-top:" + (level * this._moving_length).toString() + "px; opacity: 0.0;");
     return this._obj;
 }
 
@@ -70,12 +69,17 @@ Notification.prototype.getIndex = function() {
     return this._index;
 }
 
-Notification.prototype.moveUp = function(level) {
-    if (this._level > level) {
-        move("#" + this._index)
-          .sub('margin-top', (this._level - level) * this._moving_length)
-          .end();
-    }
+Notification.prototype.getHeight = function() {
+    return $('#' + this._index).height();
+}
+
+Notification.prototype.moveUp = function(height) {
+    var obj = document.getElementById(this._index);
+    $(obj).css('margin-top', parseInt(window.getComputedStyle(obj).getPropertyValue("margin-top")) + height);
+
+    move(obj)
+      .sub('margin-top', height)
+      .end();
 }
 
 Notification.prototype.show = function() {
@@ -91,9 +95,10 @@ Notification.prototype.show = function() {
     timer = setTimeout(appear, 20);
 }
 
-Notification.prototype.hide = function() {
+Notification.prototype.hide = function(bottom_obj) {
     var timer;
     var obj = document.getElementById(this._index);
+    var height = this.getHeight();
     function dissaper() {
         var opacity = parseFloat(window.getComputedStyle(obj).getPropertyValue("opacity"));
         if (opacity > 0) {
@@ -101,6 +106,9 @@ Notification.prototype.hide = function() {
             timer = setTimeout(dissaper, 20);
         } else {
             obj.remove();
+            if (typeof bottom_obj !== "undefined") {
+                bottom_obj.moveUp(height);
+            }
         }
     }
     timer = setTimeout(dissaper, 20);
