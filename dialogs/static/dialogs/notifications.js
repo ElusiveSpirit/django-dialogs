@@ -10,6 +10,8 @@ Shows notification array and organize it's
 
 function NotificationHandler() {
     this._queue = [];
+    // For history..
+    this._storage = [];
     this._timeout = 3000;
 
     this._container = document.createElement('div');
@@ -20,31 +22,35 @@ function NotificationHandler() {
 NotificationHandler.prototype.addNotification = function(notification) {
     this._queue.push(notification);
     var index = setTimeout(this.removeNotification, this._timeout, this, notification);
+    this._storage.push({
+        'id' : index,
+        'notification' : notification,
+        'time' : Date.now(),
+        'has_read' : false,
+    });
     notification.setIndex(index);
-    this.show(notification.getObj(this._queue.length - 1));
+    this.addObj(notification.getObj());
     notification.show();
 }
 
 NotificationHandler.prototype.removeNotification = function(handler, notification) {
-    var index = notification.getIndex();
     handler._queue.forEach(function(item, i, arr) {
-        if (item.getIndex() == index) {
+        if (item.getIndex() == notification.getIndex()) {
             var removing_obj = item;
             delete handler._queue[i];
-            removing_obj.hide(handler._queue[i + 1]);
+            removing_obj.hide();
             return false;
         }
     });
 }
 
-NotificationHandler.prototype.show = function(obj) {
+NotificationHandler.prototype.addObj = function(obj) {
     this._container.appendChild(obj);
 }
 
 
 function Notification(text) {
     this._text = text;
-    // TODO Get object's height instead
     this._moving_length = 50;
     this._template_top = '';
     this._template_bot = '';
@@ -55,61 +61,54 @@ function Notification(text) {
     this._obj.innerHTML = this._template_top + this._text + this._template_bot;
 }
 
-Notification.prototype.getObj = function(level) {
-    this._level = level;
+Notification.prototype.getObj = function() {
     return this._obj;
 }
 
 Notification.prototype.setIndex = function(index) {
     this._index = index;
-    this._obj.id = index;
+    this._obj.id = "notification_" + index;
 }
 
 Notification.prototype.getIndex = function() {
     return this._index;
 }
 
-Notification.prototype.getHeight = function() {
-    return $('#' + this._index).height();
+Notification.prototype.getID = function() {
+    return "notification_" + this.getIndex();
 }
 
-Notification.prototype.moveUp = function(height) {
-    var obj = document.getElementById(this._index);
-    $(obj).css('margin-top', parseInt(window.getComputedStyle(obj).getPropertyValue("margin-top")) + height);
-
-    move(obj)
-      .sub('margin-top', height)
-      .end();
+Notification.prototype.getHeight = function() {
+    return $('#notification_' + this._index).outerHeight(true);
 }
 
 Notification.prototype.show = function() {
-    var timer;
-    var obj = document.getElementById(this._index);
+    var obj = document.getElementById(this.getID());
     function appear() {
         var opacity = parseFloat(window.getComputedStyle(obj).getPropertyValue("opacity"));
         if (opacity < 1) {
-                obj.style.opacity = opacity + 0.1;
-            timer = setTimeout(appear, 20);
+            obj.style.opacity = opacity + 0.1;
+            setTimeout(appear, 20);
         }
     }
-    timer = setTimeout(appear, 20);
+    setTimeout(appear, 20);
 }
 
-Notification.prototype.hide = function(bottom_obj) {
-    var timer;
-    var obj = document.getElementById(this._index);
+Notification.prototype.hide = function() {
+    var obj = document.getElementById(this.getID());
     var height = this.getHeight();
     function dissaper() {
         var opacity = parseFloat(window.getComputedStyle(obj).getPropertyValue("opacity"));
         if (opacity > 0) {
             obj.style.opacity = opacity - 0.1;
-            timer = setTimeout(dissaper, 20);
+            setTimeout(dissaper, 20);
         } else {
-            obj.remove();
-            if (typeof bottom_obj !== "undefined") {
-                bottom_obj.moveUp(height);
-            }
+            move(obj)
+              .sub('margin-top', height)
+              .end(function (){
+                obj.remove();
+              });
         }
     }
-    timer = setTimeout(dissaper, 20);
+    setTimeout(dissaper, 20);
 }
