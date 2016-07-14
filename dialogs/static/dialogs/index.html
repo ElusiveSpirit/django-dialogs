@@ -2,6 +2,7 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="privatemessages.css" />
+    <meta charset="utf-8">
   </head>
   <body>
     <script type="text/javascript" src="http://yandex.st/jquery/1.8.3/jquery.min.js"></script>
@@ -9,9 +10,19 @@
     <script src="notifications.js"></script>
     <script>
         var not = new NotificationHandler();
-        not.addNotification(new Notification("Hello world1"))
+        not.addNotification(new BaseNotification("Hello world 1", 3000))
+        not.addNotification(new MessageNotification("Konstantin", "https://image.freepik.com/free-icon/_318-9118.jpg", "Чуваак!", "20:16"))
+        not.addNotification(new BaseNotification("Hello world 2", 1000))
+        not.addNotification(new AlertNotification("Hello world 3", 5000))
+        not.addNotification(new ErrorNotification("Hello world 4", 5000))
+        setTimeout(function () {
+            not.addNotification(new MessageNotification("Konstantin", "https://image.freepik.com/free-icon/_318-9118.jpg", "Почему ты молчишь? Ответить что-нибудь!", "20:16"))
+        }, 5500);
+        setTimeout(function () {
+            not.addNotification(new InfoNotification("Чтобы закрыть некоторые уведомления, на них надо нажать левой кнопкой мыши"))
+        }, 6500);
         function a() {
-            not.addNotification(new Notification("Hello world"));
+            not.addNotification(new BaseNotification("Hello world"));
         }
     </script>
    <button onclick="a();">ADD</button>
