@@ -2,31 +2,19 @@ body {
 	background: #F4F4F4;
 }
 
-div.scrollbar {
-	top: 0px;
-	left: 0px;
-	background: black;
-	width: 100%;
-	height: 70px;
-	padding: 10px;
-	margin-bottom: 5px;
-	-webkit-box-shadow: 0 2px 15px -5px #777;
-       -moz-box-shadow: 0 2px 15px -5px #777;
-            box-shadow: 0 2px 15px -5px #777;
-}
-
 div.dialog-mail {
 	margin: 0 auto;
 	width: 800px;
-	padding-top: 15px;
-	padding-bottom: 10px;
 	background: white;
-	padding: 5px;
-	-webkit-box-shadow: 0 2px 15px -5px #777;
-       -moz-box-shadow: 0 2px 15px -5px #777;
-            box-shadow: 0 2px 15px -5px #777;
-	margin-bottom: 15px;
+	padding-left: 15px;
+	padding-top: 10px;
+	margin-bottom: 10px;
+	-webkit-box-shadow: 0 1px 10px -3px #777;
+    -moz-box-shadow: 0 1px 10px -3px #777;
+	box-shadow: 0 1px 10px -3px #777;
+	border-radius: 10px;
 	height: 700px;
+	border: 1px solid #D8DAE1;
 }
 
 div.dialog {
@@ -37,8 +25,9 @@ div.dialog {
     -moz-box-shadow: 0 1px 10px -3px #777;
 	box-shadow: 0 1px 10px -3px #777;
 	border-radius: 10px;
-	height: 875px;
+	height: 870px;
 	padding: 15px;
+	margin-top: 20px;
 }
 
 div.dialog-radius-links {
@@ -47,17 +36,85 @@ div.dialog-radius-links {
 }
 
 div.dialog-text {
-	width: 600px;
-	margin: 0 auto;
+	width: 700px;
+	margin-left: 40px;
 	margin-bottom: 10px;
 }
 
 div.dialog-sender {
 	position: absolute;
-	left: 40px; top: 5px;
+	left: 43px; top: 5px;
+	-webkit-box-shadow: 0 1px 10px -3px #777;
+    -moz-box-shadow: 0 1px 10px -3px #777;
+	box-shadow: 0 1px 10px -3px #777;
+	border-radius: 30px;
+}
+
+div.dialog-recipient-photo {
+	position: absolute;
+	right: 15px; top: 3px;
+	-webkit-box-shadow: 0 1px 10px -3px #777;
+    -moz-box-shadow: 0 1px 10px -3px #777;
+	box-shadow: 0 1px 10px -3px #777;
+	border-radius: 30px;
+	float: left;
+}
+
+textarea {
+	resize: none;
+}
+
+div.dialog-button {
+	margin-left: 35px;
 }
 
 div.dialog-recipient {
+	height: 80px;
+	width: 798px;
+	border-bottom: 2px solid #D8DAE1;
 	position: absolute;
-	left: 1280px; top: 808px;
+	right: 15px;
+	float: none;
+}
+
+div.dialog-time {
+	background: white;
+	position: absolute;
+	left: 115px; top: 60px;
+	border: 2px solid #D8DAE1;
+	border-radius: 20px;
+}
+
+div.dialog-masseg-sender {
+	float:left; overflow:hidden;
+	border: 2px solid #7E80AA;
+	padding: 5px;
+	border-radius: 5px;
+	max-width: 500px;
+	margin-top: 10px;
+	word-wrap: break-word;
+	padding-right: 40px;
+	padding-left: 10px;
+}
+
+div.dialog-masseg-recipient {
+	float:right; overflow:hidden;
+	border: 2px solid #7E80AA;
+	padding: 5px;
+	border-radius: 5px;
+	margin-right: 35px;
+	max-width: 500px;
+	margin-top: 10px;
+	word-wrap: break-word;
+	padding-left: 40px;
+	padding-right: 10px;
+}
+
+div.dialog-massegs {
+	margin-top: 80px;
+}
+
+div.dialog-masseg-row {
+	width: 800px;
+	height: 65px;
 }
