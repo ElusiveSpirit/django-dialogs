@@ -1,20 +1,18 @@
 import datetime
 import json
-import time
 from urllib.parse import urlencode
 
 import tornadoredis
 import tornado.websocket
 import tornado.ioloop
-from tornado import websocket, web, gen
+from tornado import websocket, web
 
+from django.contrib.auth.models import User
+from dialogs.models import Thread
 from django.conf import settings
 from importlib import import_module
 
 session_engine = import_module(settings.SESSION_ENGINE)
-
-from django.contrib.auth.models import User
-from dialogs.models import Thread
 
 pub_client = tornadoredis.Client()
 pub_client.connect()
@@ -48,13 +46,12 @@ class DialogsHandler(websocket.WebSocketHandler):
             participants__id=self.user_id
         ).all()
 
-        self.channel_list = [ 'user_{}'.format(self.user_id) ]
+        self.channel_list = ['user_{}'.format(self.user_id)]
         for thread in thread_list:
             self.channel_list.append("thread_{}_messages".format(thread.id))
 
         yield tornado.gen.Task(self.client.subscribe, self.channel_list)
         self.client.listen(self.resend_response)
-
 
     def check_origin(self, origin):
         return True
@@ -76,21 +73,22 @@ class DialogsHandler(websocket.WebSocketHandler):
                 "message_text": data['text'].encode("utf-8"),
                 "api_key": settings.API_KEY,
                 "sender_id": self.user_id,
-                "thread_id" : self.thread_id,
+                "thread_id": self.thread_id,
             })
         elif data['type'] == 'message_status':
             url = settings.UPDATE_MESSAGE_STATUS_API_URL
             body = urlencode({
                 "api_key": settings.API_KEY,
                 "sender_id": self.user_id,
-                "thread_id" : self.thread_id,
+                "thread_id": self.thread_id,
             })
         elif data['type'] == 'person_status':
             pub_client.publish("thread_{}_messages".format(self.thread_id), json.dumps({
-                "type" : "person_status",
-                "user_id" : self.user_id,
-                "username" : self.username,
-                "typing" : data['typing'],
+                "type": "person_status",
+                "thread_id": self.thread_id,
+                "user_id": self.user_id,
+                "username": self.username,
+                "typing": data['typing'],
             }))
             return
         else:
@@ -115,6 +113,7 @@ class DialogsHandler(websocket.WebSocketHandler):
             self.client.unsubscribe(self.channel)
         except AttributeError:
             pass
+
         def check():
             if self.client.connection.in_progress:
                 tornado.ioloop.IOLoop.instance().add_timeout(

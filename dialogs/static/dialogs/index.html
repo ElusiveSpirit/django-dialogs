@@ -14,9 +14,9 @@
         not.addNotification(new MessageNotification("Konstantin", "https://image.freepik.com/free-icon/_318-9118.jpg", "Чуваак!", "20:16"))
         not.addNotification(new BaseNotification("Hello world 2", 1000))
         not.addNotification(new AlertNotification("Hello world 3", 5000))
-        not.addNotification(new ErrorNotification("Hello world 4", 5000))
+        not.addNotification(new ErrorNotification("Hello world 4", false))
         setTimeout(function () {
-            not.addNotification(new MessageNotification("Konstantin", "https://image.freepik.com/free-icon/_318-9118.jpg", "Почему ты молчишь? Ответить что-нибудь!", "20:16"))
+            not.addNotification(new MessageNotification("Konstantin", "https://image.freepik.com/free-icon/_318-9118.jpg", "Почему ты молчишь? Ответить что-нибудь!", "20:16", false))
         }, 5500);
         setTimeout(function () {
             not.addNotification(new InfoNotification("Чтобы закрыть некоторые уведомления, на них надо нажать левой кнопкой мыши"))

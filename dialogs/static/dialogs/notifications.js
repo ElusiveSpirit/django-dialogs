@@ -30,9 +30,13 @@ class NotificationHandler {
             timeout = this._default_timeout;
         }
 
-        var index = setTimeout(
-            this.removeNotification.bind(this)
-        , timeout, notification);
+        if (notification.autoremove) {
+            var index = setTimeout(
+                this.removeNotification.bind(this)
+            , timeout, notification);
+        } else {
+            var index = setTimeout(this.doNothing, 0);
+        }
 
         this._storage.push({
             'id' : index,
@@ -48,27 +52,29 @@ class NotificationHandler {
     removeNotification(notification) {
         var that = this;
         clearTimeout(notification.index);
-        if (notification.autoremove) {
-            that._queue.forEach(function(item, i, arr) {
-                if (item.index == notification.index) {
-                    var removing_obj = item;
-                    delete that._queue[i];
-                    removing_obj.hide();
-                    return false;
-                }
-            });
-        }
+        that._queue.forEach(function(item, i, arr) {
+            if (item.index == notification.index) {
+                var removing_obj = item;
+                delete that._queue[i];
+                removing_obj.hide();
+                return false;
+            }
+        });
     }
 
     addObj(obj) {
         this._container.appendChild(obj);
+    }
+
+    doNothing() {
+        return;
     }
 }
 
 
 class BaseNotification {
 
-    constructor(html, timeout=1000, autoremove=true) {
+    constructor(html, autoremove=true, timeout=1000) {
         this._timeout = timeout;
         this._autoremove = autoremove;
 
@@ -158,15 +164,15 @@ class BaseNotification {
 class AlertNotification extends BaseNotification {
 
     constructor(text, timeout=3000) {
-        super(text, timeout);
+        super(text, true, timeout);
         this.extra_classes = 'alert';
     }
 }
 
 class ErrorNotification extends BaseNotification {
 
-    constructor(text, timeout=3000) {
-        super(text, timeout);
+    constructor(text, autoremove=true, timeout=3000) {
+        super(text, autoremove, timeout);
         this.extra_classes = 'error';
     }
 }
@@ -174,7 +180,7 @@ class ErrorNotification extends BaseNotification {
 class InfoNotification extends BaseNotification {
 
     constructor(text) {
-        super(text, undefined, false);
+        super(text, false);
         this.extra_classes = 'info';
         var that = this;
         this.click = function (){
@@ -185,7 +191,7 @@ class InfoNotification extends BaseNotification {
 
 class MessageNotification extends BaseNotification {
 
-    constructor(author, img, text, date) {
+    constructor(author, img, text, date, autoremove=true) {
         var template = `
             <div class="message">
               <img src="${img}" width="40" height="40" />
@@ -197,7 +203,7 @@ class MessageNotification extends BaseNotification {
               <div style="clear:both;"></div>
             </div>`;
 
-        super(template, undefined, false);
+        super(template, autoremove, 5000);
 
         var that = this;
         this.click = function (){

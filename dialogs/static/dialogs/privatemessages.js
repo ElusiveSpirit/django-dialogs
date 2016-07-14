@@ -1,3 +1,5 @@
+jQuery.fn.exists = function(){return this.length>0;}
+
 function getCookie(name) {
     var cookieValue = null;
     if (document.cookie && document.cookie != '') {
@@ -49,17 +51,39 @@ function activate_chat(user_name, user_id) {
     $("div.chat form.message_form div.compose textarea").focus();
 
     function scroll_chat_window() {
-        $("div.chat div.conversation").scrollTop($("div.chat div.conversation")[0].scrollHeight);
+        if ($("div.chat div.conversation").exists()) {
+            $("div.chat div.conversation").scrollTop($("div.chat div.conversation")[0].scrollHeight);
+        }
     }
 
     scroll_chat_window();
 
+    function connection_error() {
+        if (!is_connection_error) {
+            is_connection_error = true;
+            connection_error_notif = new ErrorNotification("Нет подключения к серверу. Проверьте соединение с сетью.", false);
+            nt.addNotification(connection_error_notif)
+        }
+    }
+
+    function connection_ok() {
+        if (is_connection_error) {
+            is_connection_error = false;
+            nt.removeNotification(connection_error_notif)
+            nt.addNotification(new AlertNotification("Соедниение восстановлено"))
+        }
+    }
+
+    var nt = new NotificationHandler();
     var ws;
     var thread_id = -1;
+    var is_connection_error = false;
+    var connection_error_notif;
     function start_chat_ws() {
         ws = new WebSocket("ws://127.0.0.1:8888/ws/" + user_id + "/");
 
         ws.onopen = function(event) {
+            connection_ok();
             var url_path = window.location.pathname.split( '/' );
             if (url_path[2] == 'chat') {
                 thread_id = url_path[3];
@@ -75,12 +99,14 @@ function activate_chat(user_name, user_id) {
 
             // console.log("type = " + message_data.type);
             if (message_data.type == "message") {
+                /**
+                * New message
+                */
+                var date = new Date(message_data.timestamp*1000);
+                var time = $.map([date.getHours(), date.getMinutes(), date.getSeconds()], function(val, i) {
+                    return (val < 10) ? '0' + val : val;
+                });
                 if (thread_id == message_data.thread_id) {
-                    var date = new Date(message_data.timestamp*1000);
-                    var time = $.map([date.getHours(), date.getMinutes(), date.getSeconds()], function(val, i) {
-                        return (val < 10) ? '0' + val : val;
-                    });
-
                     var status = (message_data.has_read) ? "" : " not_read";
                     var input_html = '<div id="' + message_data.message_id + '" class="message' + status + '">';
                     if (message_data.sender == user_name) {
@@ -92,17 +118,24 @@ function activate_chat(user_name, user_id) {
                     $("div.mess-old").append(input_html + '<span class="datetime">' + time[0] + ':' + time[1] + ':' + time[2] + '</span> ' + message_data.sender + ':</div><p class="message">' + message_data.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g, '<br />') + '</p></div>');
                     scroll_chat_window();
                 } else {
-                    show_message_notification(message_data.sender, message_data.text);
+                    nt.addNotification(new MessageNotification(message_data.sender, "https://image.freepik.com/free-icon/_318-9118.jpg", message_data.text, `${time[0]}:${time[1]}`))
                 }
 
             } else if (message_data.type == "message_status") {
+                /**
+                * Messages have been read.
+                * New status for them.
+                */
                 console.log(message_data.message_id_list);
                 let list = message_data.message_id_list;
                 list.forEach(function(item, i, arr) {
                     $(`#${item}`).removeClass("not_read");
                 })
             } else if (message_data.type == "person_status") {
-                if (message_data.user_id != user_id) {
+                /**
+                * Person is typing or not
+                */
+                if (message_data.user_id != user_id && message_data.thread_id == thread_id) {
                     if (message_data.typing) {
                         var text = message_data.username + " набирает сообщение...";
                         $("div.chat div.conversation div.typing").append('<div class="person" name="' + message_data.username + '">' + text + "</div>");
@@ -117,13 +150,14 @@ function activate_chat(user_name, user_id) {
             } else if (message_data.type == "message_error") {
 
             } else if (message_data.type == "error") {
-
+                nt.addNotification(new ErrorNotification(message_data.text))
             }
       };
 
         ws.onclose = function(){
             // Try to reconnect in 5 seconds
             // TODO random time!
+            connection_error();
             setTimeout(function() {start_chat_ws()}, 5000);
         };
     }
@@ -137,7 +171,7 @@ function activate_chat(user_name, user_id) {
     function update_status(message) {
         //$(this).slideUp();
         if (ws.readyState != WebSocket.OPEN) {
-            // TODO Error = "Нет подключения к серверу. Проверьте соединение с сетью."
+            connection_error();
             return;
         }
         var mess_list = $("div.chat div.conversation div.message.not_read div.author.partner");
@@ -166,6 +200,7 @@ function activate_chat(user_name, user_id) {
         }
 
         if (ws.readyState != WebSocket.OPEN) {
+            connection_error();
             return false;
         }
 
@@ -184,7 +219,7 @@ function activate_chat(user_name, user_id) {
 
         ws.send(data);
         textarea.val("");
-        // TODO Lags when user send message and continue typing
+
         typing = false;
         send_status_typing(typing);
     }
