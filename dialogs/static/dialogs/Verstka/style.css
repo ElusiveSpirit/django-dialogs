@@ -13,7 +13,7 @@ div.dialog-mail {
     -moz-box-shadow: 0 1px 10px -3px #777;
 	box-shadow: 0 1px 10px -3px #777;
 	border-radius: 10px;
-	height: 700px;
+	height: 750px;
 	border: 1px solid #D8DAE1;
 }
 
@@ -25,7 +25,7 @@ div.dialog {
     -moz-box-shadow: 0 1px 10px -3px #777;
 	box-shadow: 0 1px 10px -3px #777;
 	border-radius: 10px;
-	height: 870px;
+	height: 920px;
 	padding: 15px;
 	margin-top: 20px;
 }
