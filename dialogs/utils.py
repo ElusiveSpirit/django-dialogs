@@ -40,7 +40,7 @@ def login_required_ajax(view):
 
 def get_messages_info(user_id, thread_id):
     """
-    Returns a dict of message info:
+    Returns a dict of message info from redis:
     {
         "total",
         "sent",
@@ -85,13 +85,30 @@ def json_response(obj):
     return HttpResponse(json.dumps(obj), content_type="application/json")
 
 
-def update_message_status(message):
+def clear_users_thread_unread_messages(thread, user):
     r = redis.StrictRedis()
-    r.publish("thread_{}_messages".format(message.thread.id), json.dumps({
+    r.hset(
+        "thread_{}_messages".format(thread.id),
+        "user_{}_unread_msg_count".format(user.username),
+        0
+    )
+
+def update_thread_messages_status(thread, user):
+    message_list = thread.get_user_unread_messages(user)
+    message_id_list = [message.id for message in message_list[:]]
+    message_list.update(has_read=True)
+
+    r = redis.StrictRedis()
+    if thread.participants.count() > 2:
+        clear_users_thread_unread_messages(thread, user)
+
+    r.publish("thread_{}_messages".format(thread.id), json.dumps({
         "type" : "message_status",
-        "thread_id" : message.thread.id,
-        "message_id" : message.id,
+        "thread_id" : thread.id,
+        "message_id_list" : message_id_list,
     }))
+    clear_users_thread_messages
+
 
 
 def send_message(message):
@@ -123,9 +140,11 @@ def send_message(message):
         "has_read" : message.has_read,
     }))
 
-    for key in ("total_messages", "from_".format(message.sender.id)):
+    participants = list(message.thread.participants.all())
+    participants.remove(message.sender)
+    for user in participants:
         r.hincrby(
             "thread_{}_messages".format(message.thread.id),
-            key,
+            "user_{}_unread_msg_count".format(user.username),
             1
         )

@@ -52,10 +52,6 @@ function activate_chat(user_name, user_id) {
         $("div.chat div.conversation").scrollTop($("div.chat div.conversation")[0].scrollHeight);
     }
 
-    function show_message_notification(sender, message_data.text) {
-
-    }
-
     scroll_chat_window();
 
     var ws;
@@ -100,7 +96,11 @@ function activate_chat(user_name, user_id) {
                 }
 
             } else if (message_data.type == "message_status") {
-                $("#" + message_data.message_id).removeClass("not_read");
+                console.log(message_data.message_id_list);
+                let list = message_data.message_id_list;
+                list.forEach(function(item, i, arr) {
+                    $(`#${item}`).removeClass("not_read");
+                })
             } else if (message_data.type == "person_status") {
                 if (message_data.user_id != user_id) {
                     if (message_data.typing) {
@@ -140,16 +140,13 @@ function activate_chat(user_name, user_id) {
             // TODO Error = "Нет подключения к серверу. Проверьте соединение с сетью."
             return;
         }
-        if ($(this).children().hasClass("we"))
-          return;
+        var mess_list = $("div.chat div.conversation div.message.not_read div.author.partner");
 
-        var data = JSON.stringify({
-          "type" : "message_status",
-          "message_id" : this.id,
-          "message_status" : true,
-        });
-
-        ws.send(data);
+        if (mess_list.length > 0) {
+            ws.send(JSON.stringify({
+              "type" : "message_status",
+            }));
+        }
     }
     $("div.chat div.conversation div.message.not_read").live("hover", update_status);
 
@@ -194,12 +191,7 @@ function activate_chat(user_name, user_id) {
 
     $("form.message_form div.send button").click(send_message);
 
-    function update_messages() {
-        // TODO Async process
-        var mess_list = $("div.chat div.conversation div.message.not_read").trigger('mouseenter');
-    }
-
-    $("textarea#message_textarea").focus(update_messages);
+    $("textarea#message_textarea").focus(update_status);
     $("textarea#message_textarea").focusout(function (e) {
         if (typing) {
             typing = false;
@@ -216,6 +208,6 @@ function activate_chat(user_name, user_id) {
             typing = true;
             send_status_typing(typing);
         }
-        update_messages();
+        update_status();
     });
 }

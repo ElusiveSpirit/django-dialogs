@@ -84,8 +84,6 @@ class DialogsHandler(websocket.WebSocketHandler):
                 "api_key": settings.API_KEY,
                 "sender_id": self.user_id,
                 "thread_id" : self.thread_id,
-                "message_id" : data['message_id'],
-                "message_status" : data['message_status'],
             })
         elif data['type'] == 'person_status':
             pub_client.publish("thread_{}_messages".format(self.thread_id), json.dumps({
