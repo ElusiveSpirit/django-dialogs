@@ -3,7 +3,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from dialogs.models import Message, Thread
-from dialogs.utils import send_message, update_message_status
+from dialogs.utils import send_message, update_thread_messages_status
 
 
 class MessageForm(forms.Form):
@@ -92,28 +92,9 @@ class AbstractMessageAPIForm(forms.Form):
 
 
 class UpdateMessageStatusAPIForm(AbstractMessageAPIForm):
-    message_id = forms.IntegerField()
-    message_status = forms.BooleanField(initial=False, required=False)
 
-    def clean_message_id(self):
-        try:
-            self.message = Message.objects.get(id=self.cleaned_data['message_id'])
-        except Thread.DoesNotExist:
-            raise forms.ValidationError("No such message")
-        return self.message.id
-
-    def clean(self):
-        if (self.sender not in self.thread.participants.all() or
-            self.sender == self.message.sender):
-            raise forms.ValidationError("Wrong input params")
-
-    def update_status(self):
-        self.message.has_read = self.cleaned_data['message_status']
-        self.message.save()
-
-    def post(self):
-        update_message_status(self.message)
-
+    def update_status_and_post(self):
+        update_thread_messages_status(self.thread, self.sender)
 
 
 class SendMessageAPIForm(AbstractMessageAPIForm):

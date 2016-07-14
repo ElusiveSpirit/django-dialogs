@@ -1,21 +1,3 @@
-"""
-from django.shortcuts import render
-
-from dialogs.forms import SendMessageForm
-from dialogs.utils import HttpResponseAjaxError, HttpResponseAjax, login_required_ajax
-
-@login_required_ajax
-def send_message_api(request):
-    form = SendMessageForm(request.POST)
-    if form.is_valid():
-        form.send_message()
-        return HttpResponseAjax(status='ok')
-    else:
-        return HttpResponseAjaxError(
-            code = 'send_message_error',
-            message = form.errors,
-        )
-"""
 import json
 import pytz
 import redis
@@ -33,7 +15,7 @@ from django.contrib.auth.models import User
 
 from dialogs.models import Thread, Message
 from dialogs.forms import MessageForm, SendMessageAPIForm, UpdateMessageStatusAPIForm
-from dialogs.utils import json_response, send_message, get_messages_info
+from dialogs.utils import json_response, send_message, get_messages_info, clear_users_thread_unread_messages
 from dialogs.utils import HttpResponseAjaxError, HttpResponseAjax, login_required_ajax
 
 
@@ -57,8 +39,7 @@ def send_message_api(request):
 def update_message_status_api(request):
     form = UpdateMessageStatusAPIForm(request.POST)
     if form.is_valid():
-        form.update_status()
-        form.post()
+        form.update_status_and_post()
         return json_response({"status": "ok"})
     else:
         return json_response({"status": "error"})
@@ -102,6 +83,8 @@ def chat_view(request, thread_id):
 
     tz = request.COOKIES.get("timezone")
     if tz: timezone.activate(pytz.timezone(tz))
+
+    clear_users_thread_unread_messages(thread, request.user)
 
     return render(request, 'chat.html', {
         "thread": thread,

@@ -37,13 +37,32 @@ class Thread(models.Model):
         """
         return self.message_set.count()
 
+    def get_user_unread_messages(self, user):
+        return self.message_set.filter(has_read=False).exclude(sender=user)
+
 
     def get_unread_messages_count(self):
         return self.message_set.filter(has_read=False).count()
 
-    def get_user_unread_messages_count(self, user):
-        return self.message_set.filter(has_read=False).exclude(sender=user).count()
 
+    def get_user_unread_messages_count(self, user):
+        if self.participants.count() == 2:
+            return self.message_set.filter(has_read=False).exclude(sender=user).count()
+        else:
+            count = r.hget(
+                "thread_{}_messages".format(str(self.pk)),
+                "user_{}_unread_msg_count".format(user.username)
+            )
+            if count == None:
+                r.hset(
+                    "thread_{}_messages".format(str(self.pk)),
+                    "user_{}_unread_msg_count".format(user.username),
+                    0
+                )
+                count = self.get_unread_messages_count()
+            else:
+                count = int(count)    
+            return count
 
     def __str__(self):
         if self.name:
