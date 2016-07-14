@@ -3,6 +3,62 @@ html, body {
     margin: 0;
 }
 
+div.notification-container {
+    position: fixed;
+    right: 20px;
+    top: 10px;
+    width: 250px;
+    height: 400px;
+}
+
+div.notification-container div.notification {
+    background-color: white;
+    margin-top: 10px;
+    padding: 15px;
+    border-radius: 2px;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12);
+}
+
+div.notification-container div.notification.alert {
+    border: 1px solid #d6e9c6;
+    color: #3c763d;
+    background-color: #dff0d8;
+}
+
+div.notification-container div.notification.error {
+    border: 1px solid #e9c6c6;
+    color: #773c3c;
+    background-color: #f0d8d8;
+}
+
+div.notification-container div.notification.info {
+    border: 1px solid #fffdb0;
+    color: #a49f3e;
+    background-color: #fefbb7;
+}
+
+div.notification-container div.notification div.message {
+
+}
+
+div.notification-container div.notification div.message img {
+    margin-right: 10px;
+    float: left;
+}
+
+div.notification-container div.notification div.message div.content h4 {
+    margin: 0;
+}
+
+div.notification-container div.notification div.message div.content p {
+    margin: 0;
+}
+
+div.notification-container div.notification div.message div.content p.date {
+    text-align: right;
+    font-size: smaller;
+}
+
 body {
     font-family: Geneva, Arial, Helvetica, sans-serif;
     font-size: 14px;
@@ -172,6 +228,10 @@ div.chat div.conversation div.typing div.person {
     padding: 2px 5px;
     color: gray;
     font-size: small;
+}
+
+.red {
+  color: red;
 }
 
 .spinner {

@@ -1,20 +1,18 @@
 import datetime
 import json
-import time
 from urllib.parse import urlencode
 
 import tornadoredis
 import tornado.websocket
 import tornado.ioloop
-from tornado import websocket, web, gen
+from tornado import websocket, web
 
+from django.contrib.auth.models import User
+from dialogs.models import Thread
 from django.conf import settings
 from importlib import import_module
 
 session_engine = import_module(settings.SESSION_ENGINE)
-
-from django.contrib.auth.models import User
-from dialogs.models import Thread
 
 pub_client = tornadoredis.Client()
 pub_client.connect()
@@ -26,59 +24,71 @@ class MainHandler(web.RequestHandler):
         self.write('Connected to dialog service')
 
 
-class MessagesHandler(websocket.WebSocketHandler):
+class DialogsHandler(websocket.WebSocketHandler):
+    # TODO Create another redis channel for dialogs info
 
     @tornado.gen.engine
-    def open(self, thread_id):
+    def open(self, user_id):
         self.client = tornadoredis.Client()
         self.client.connect()
         session_key = self.get_cookie(settings.SESSION_COOKIE_NAME)
         session = session_engine.SessionStore(session_key)
         try:
             self.user_id = session["_auth_user_id"]
+            if user_id != self.user_id:
+                raise User.DoesNotExist
             self.username = User.objects.get(id=self.user_id).username
         except (KeyError, User.DoesNotExist):
             self.close()
             return
-        if not Thread.objects.filter(
-            id=thread_id,
+
+        thread_list = Thread.objects.filter(
             participants__id=self.user_id
-        ).exists():
-            self.close()
-            return
-        self.channel = "thread_{}_messages".format(thread_id)
-        self.thread_id = thread_id
-        yield tornado.gen.Task(self.client.subscribe, self.channel)
-        self.client.listen(self.show_new_message)
+        ).all()
+
+        self.channel_list = ['user_{}'.format(self.user_id)]
+        for thread in thread_list:
+            self.channel_list.append("thread_{}_messages".format(thread.id))
+
+        yield tornado.gen.Task(self.client.subscribe, self.channel_list)
+        self.client.listen(self.resend_response)
 
     def check_origin(self, origin):
         return True
 
     def on_message(self, message):
         data = json.loads(message)
-        if data['type'] == 'message':
+        if data['type'] == 'open_dialog':
+            if not Thread.objects.filter(
+                id=data['thread_id'],
+                participants__id=self.user_id
+            ).exists():
+                self.close()
+                return
+            self.thread_id = data['thread_id']
+            return
+        elif data['type'] == 'message':
             url = settings.SEND_MESSAGE_API_URL
             body = urlencode({
                 "message_text": data['text'].encode("utf-8"),
                 "api_key": settings.API_KEY,
                 "sender_id": self.user_id,
-                "thread_id" : self.thread_id,
+                "thread_id": self.thread_id,
             })
         elif data['type'] == 'message_status':
             url = settings.UPDATE_MESSAGE_STATUS_API_URL
             body = urlencode({
                 "api_key": settings.API_KEY,
                 "sender_id": self.user_id,
-                "thread_id" : self.thread_id,
-                "message_id" : data['message_id'],
-                "message_status" : data['message_status'],
+                "thread_id": self.thread_id,
             })
         elif data['type'] == 'person_status':
-            pub_client.publish(self.channel, json.dumps({
-                "type" : "person_status",
-                "user_id" : self.user_id,
-                "username" : self.username,
-                "typing" : data['typing'],
+            pub_client.publish("thread_{}_messages".format(self.thread_id), json.dumps({
+                "type": "person_status",
+                "thread_id": self.thread_id,
+                "user_id": self.user_id,
+                "username": self.username,
+                "typing": data['typing'],
             }))
             return
         else:
@@ -92,7 +102,7 @@ class MessagesHandler(websocket.WebSocketHandler):
         )
         http_client.fetch(request, self.handle_request)
 
-    def show_new_message(self, result):
+    def resend_response(self, result):
         try:
             self.write_message(str(result.body))
         except tornado.websocket.WebSocketClosedError:
@@ -103,6 +113,7 @@ class MessagesHandler(websocket.WebSocketHandler):
             self.client.unsubscribe(self.channel)
         except AttributeError:
             pass
+
         def check():
             if self.client.connection.in_progress:
                 tornado.ioloop.IOLoop.instance().add_timeout(
@@ -124,5 +135,5 @@ class MessagesHandler(websocket.WebSocketHandler):
 
 application = tornado.web.Application([
     (r"/", MainHandler),
-    (r'/ws/(?P<thread_id>\d+)/', MessagesHandler),
+    (r'/ws/(?P<user_id>\d+)/', DialogsHandler),
 ])

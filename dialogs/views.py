@@ -1,26 +1,7 @@
-"""
-from django.shortcuts import render
+import pytz
 
-from dialogs.forms import SendMessageForm
-from dialogs.utils import HttpResponseAjaxError, HttpResponseAjax, login_required_ajax
-
-@login_required_ajax
-def send_message_api(request):
-    form = SendMessageForm(request.POST)
-    if form.is_valid():
-        form.send_message()
-        return HttpResponseAjax(status='ok')
-    else:
-        return HttpResponseAjaxError(
-            code = 'send_message_error',
-            message = form.errors,
-        )
-"""
-import json
-
-import redis
-
-from django.shortcuts import render_to_response, get_object_or_404, render, redirect
+from django.shortcuts import render_to_response, get_object_or_404, render
+from django.shortcuts import redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
@@ -32,9 +13,12 @@ from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.models import User
 
 from dialogs.models import Thread, Message
-from dialogs.forms import MessageForm, SendMessageAPIForm, UpdateMessageStatusAPIForm
-from dialogs.utils import json_response, send_message, get_messages_info
-from dialogs.utils import HttpResponseAjaxError, HttpResponseAjax, login_required_ajax
+
+from dialogs.forms import MessageForm, SendMessageAPIForm
+from dialogs.forms import UpdateMessageStatusAPIForm
+
+from dialogs.utils import json_response, get_messages_info
+from dialogs.utils import clear_users_thread_unread_messages
 
 
 @require_POST
@@ -57,8 +41,7 @@ def send_message_api(request):
 def update_message_status_api(request):
     form = UpdateMessageStatusAPIForm(request.POST)
     if form.is_valid():
-        form.update_status()
-        form.post()
+        form.update_status_and_post()
         return json_response({"status": "ok"})
     else:
         return json_response({"status": "error"})
@@ -72,15 +55,23 @@ def messages_view(request):
             form.save()
             form.post()
             return redirect(reverse('dialogs:chat', kwargs={
-                'thread_id' : form.get_thread_id()
+                'thread_id': form.get_thread_id()
             }))
     else:
         form = MessageForm()
-    threads = Thread.objects.filter(participants=request.user).order_by("-last_message")
+    thread_list = Thread.objects.filter(
+        participants=request.user).order_by("-last_message")
+
+    unread_messages = 0
+    for thread in thread_list:
+        thread.unread_messages_count = thread.get_user_unread_messages_count(
+            request.user)
+        unread_messages += thread.unread_messages_count
 
     return render(request, 'private_messages.html', {
-        "threads": threads,
-        'form' : form,
+        "thread_list": thread_list,
+        'form': form,
+        'unread_messages': unread_messages,
     })
 
 
@@ -92,10 +83,13 @@ def chat_view(request, thread_id):
         participants__id=request.user.id
     )
     messages_info = get_messages_info(request.user.id, thread_id)
-    messages = thread.message_set.order_by("-datetime")[:30]
+    messages = thread.message_set.order_by("-datetime")[:]
 
     tz = request.COOKIES.get("timezone")
-    if tz: timezone.activate(tz)
+    if tz:
+        timezone.activate(pytz.timezone(tz))
+
+    clear_users_thread_unread_messages(thread, request.user)
 
     return render(request, 'chat.html', {
         "thread": thread,

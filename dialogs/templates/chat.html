@@ -1,19 +1,7 @@
 {% extends "base.html" %}
 
-{% load dialog_name %}
+{% load threads %}
 {% block title %}{% dialog_name thread %}{% endblock %}
-
-{% block head %}
-<script type="text/javascript">
-$(document).ready(function() {
-    activate_chat({{ thread.id }}, "{{ user.username }}", {{ user.id }}, {
-        "total": {{ messages_total }},
-        "sent": {{ messages_sent }},
-        "received": {{ messages_received }}
-    });
-});
-</script>
-{% endblock %}
 
 {% block content %}
 {% load pluralize %}

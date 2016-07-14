@@ -2,12 +2,20 @@
 
 {% block content %}
 {% load pluralize %}
-{% load dialog_name %}
+{% load threads %}
 <div class="private_messages">
     <h1>Собеседники</h1>
     <div class="partners">
-    {% for thread in threads %}
-        <p><a href="{% url 'dialogs:chat' thread.id %}">{% dialog_name thread %} ({{ thread.get_total_messages|default_if_none:"0" }} {{ thread.get_total_messages|rupluralize:"сообщение,сообщения,сообщений" }})</a></p>
+      {% if  unread_messages != 0 %}
+        <h4>{{ unread_messages }} {{ unread_messages|rupluralize:"новое сообщение,новые сообщения,новых сообщений" }}</h4>
+      {% endif %}
+    {% for thread in thread_list %}
+        <p>
+          {% if thread.unread_messages_count != 0 %}
+            <span class="red">[{{ thread.unread_messages_count }}]</span>
+          {% endif %}
+          <a href="{% url 'dialogs:chat' thread.id %}">{% dialog_name thread %} ({{ thread.get_total_messages|default_if_none:"0" }} {{ thread.get_total_messages|rupluralize:"сообщение,сообщения,сообщений" }})</a>
+        </p>
     {% empty %}
         <p>Пока что собеседников нет.</p>
     {% endfor %}

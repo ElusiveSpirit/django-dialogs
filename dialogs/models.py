@@ -1,3 +1,4 @@
+"""Django models."""
 import redis
 
 from django.db import models
@@ -7,7 +8,10 @@ from django.contrib.auth.models import User
 
 r = redis.StrictRedis()
 
+
 class Thread(models.Model):
+    """Thread model that actual is a dialog."""
+
     name = models.TextField(blank=True)
     participants = models.ManyToManyField(User)
     last_message = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -28,7 +32,7 @@ class Thread(models.Model):
 
     def get_total_messages(self):
         """
-        Code to peek up from redis.
+        Code to peek up info from redis.
 
         return r.hget(
             "thread_{}_messages".format(str(self.pk)),
@@ -37,8 +41,35 @@ class Thread(models.Model):
         """
         return self.message_set.count()
 
+    def get_user_unread_messages(self, user):
+        return self.message_set.filter(has_read=False).exclude(sender=user)
+
+    def get_unread_messages_count(self):
+        return self.message_set.filter(has_read=False).count()
+
+    def get_user_unread_messages_count(self, user):
+        if self.participants.count() == 2:
+            return self.message_set.filter(
+                has_read=False
+            ).exclude(sender=user).count()
+        else:
+            count = r.hget(
+                "thread_{}_messages".format(str(self.pk)),
+                "user_{}_unread_msg_count".format(user.username)
+            )
+            if count is None:
+                r.hset(
+                    "thread_{}_messages".format(str(self.pk)),
+                    "user_{}_unread_msg_count".format(user.username),
+                    0
+                )
+                count = self.get_unread_messages_count()
+            else:
+                count = int(count)
+            return count
 
     def __str__(self):
+        """Returns string list with all participants"""
         if self.name:
             return self.name
         return ", ".join(self.get_participants_list_usernames())

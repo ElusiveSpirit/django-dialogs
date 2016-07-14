@@ -3,13 +3,16 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from dialogs.models import Message, Thread
-from dialogs.utils import send_message, update_message_status
+from dialogs.utils import send_message, update_thread_messages_status
 
 
 class MessageForm(forms.Form):
-    recipient_name = forms.CharField(max_length=300,
+    recipient_name = forms.CharField(
+        max_length=300,
         widget=forms.TextInput(attrs={'placeholder': 'Пользователи'}))
-    message_text = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Сообщение'}), max_length=10000)
+    message_text = forms.CharField(
+        widget=forms.Textarea(attrs={'placeholder': 'Сообщение'}),
+        max_length=10000)
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -27,7 +30,9 @@ class MessageForm(forms.Form):
             except User.DoesNotExist:
                 except_list.append(name)
         if len(except_list) > 0:
-            raise forms.ValidationError(u"Next user's are not exist: {}.".format(", ".join(except_list)))
+            raise forms.ValidationError(
+                u"Next user's are not exist: {}.".
+                format(", ".join(except_list)))
 
         if self.user in recipient_list:
             raise forms.ValidationError("You cannot send messages to yourself.")
@@ -66,6 +71,7 @@ class MessageForm(forms.Form):
     def post(self):
         send_message(self.message)
 
+
 class AbstractMessageAPIForm(forms.Form):
     api_key = forms.CharField(max_length=150)
     thread_id = forms.IntegerField()
@@ -92,28 +98,9 @@ class AbstractMessageAPIForm(forms.Form):
 
 
 class UpdateMessageStatusAPIForm(AbstractMessageAPIForm):
-    message_id = forms.IntegerField()
-    message_status = forms.BooleanField(initial=False, required=False)
 
-    def clean_message_id(self):
-        try:
-            self.message = Message.objects.get(id=self.cleaned_data['message_id'])
-        except Thread.DoesNotExist:
-            raise forms.ValidationError("No such message")
-        return self.message.id
-
-    def clean(self):
-        if (self.sender not in self.thread.participants.all() or
-            self.sender == self.message.sender):
-            raise forms.ValidationError("Wrong input params")
-
-    def update_status(self):
-        self.message.has_read = self.cleaned_data['message_status']
-        self.message.save()
-
-    def post(self):
-        update_message_status(self.message)
-
+    def update_status_and_post(self):
+        update_thread_messages_status(self.thread, self.sender)
 
 
 class SendMessageAPIForm(AbstractMessageAPIForm):
