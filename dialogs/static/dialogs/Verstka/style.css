@@ -6,15 +6,15 @@ div.dialog-mail {
 	margin: 0 auto;
 	width: 800px;
 	background: white;
-	padding-left: 15px;
 	padding-top: 10px;
 	margin-bottom: 10px;
 	-webkit-box-shadow: 0 1px 10px -3px #777;
     -moz-box-shadow: 0 1px 10px -3px #777;
 	box-shadow: 0 1px 10px -3px #777;
-	border-radius: 10px;
-	height: 750px;
+	border-radius: 5px;
+	height: 920px;
 	border: 1px solid #D8DAE1;
+	margin-top: 15px;
 }
 
 div.dialog {
@@ -24,7 +24,7 @@ div.dialog {
 	-webkit-box-shadow: 0 1px 10px -3px #777;
     -moz-box-shadow: 0 1px 10px -3px #777;
 	box-shadow: 0 1px 10px -3px #777;
-	border-radius: 10px;
+	border-radius: 5px;
 	height: 920px;
 	padding: 15px;
 	margin-top: 20px;
@@ -36,14 +36,14 @@ div.dialog-radius-links {
 }
 
 div.dialog-text {
-	width: 700px;
-	margin-left: 40px;
+	width: 685px;
+	margin-left: 10px;
 	margin-bottom: 10px;
 }
 
 div.dialog-sender {
 	position: absolute;
-	left: 43px; top: 5px;
+	left: 15px; top: 5px;
 	-webkit-box-shadow: 0 1px 10px -3px #777;
     -moz-box-shadow: 0 1px 10px -3px #777;
 	box-shadow: 0 1px 10px -3px #777;
@@ -65,7 +65,7 @@ textarea {
 }
 
 div.dialog-button {
-	margin-left: 35px;
+	margin-left: 15px;
 }
 
 div.dialog-recipient {
@@ -80,9 +80,10 @@ div.dialog-recipient {
 div.dialog-time {
 	background: white;
 	position: absolute;
-	left: 115px; top: 60px;
+	left: 110px; top: 55px;
 	border: 2px solid #D8DAE1;
-	border-radius: 20px;
+	border-radius: 30px;
+	padding: 5px;
 }
 
 div.dialog-masseg-sender {
@@ -102,7 +103,7 @@ div.dialog-masseg-recipient {
 	border: 2px solid #7E80AA;
 	padding: 5px;
 	border-radius: 5px;
-	margin-right: 35px;
+	margin-right: 20px;
 	max-width: 500px;
 	margin-top: 10px;
 	word-wrap: break-word;
@@ -112,9 +113,18 @@ div.dialog-masseg-recipient {
 
 div.dialog-massegs {
 	margin-top: 80px;
+	padding-left: 20px;
 }
 
 div.dialog-masseg-row {
 	width: 800px;
 	height: 65px;
+}
+
+div.dialog-masseg-text {
+	margin-top: 20px;
+	border-top: 2px solid #D8DAE1;
+	padding-top: 15px;
+	width: 100%;
+	padding-left: 15px;
 }
